@@ -1,0 +1,20 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Binary folders
+bin/
+tmp/
+
+# Code coverage report
+coverage.*
+
+# Templ generated output
+*_templ.go
+*_templ.txt
