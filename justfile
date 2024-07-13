@@ -4,9 +4,12 @@ export GOOSE_MIGRATION_DIR := "./migrations"
 default:
   @just --list --justfile {{justfile()}}
 
+# Generate auxiliary files
+generate:
+  @templ generate -include-version=false
+
 # Build the library
 build:
-  @templ generate -include-version=false
   @go build ./...
 
 # Run a documentation server
