@@ -1,0 +1,24 @@
+[output]
+sort-results=true
+
+# https://golangci-lint.run/usage/linters/
+[linters]
+enable=[
+    "bodyclose",
+    "cyclop",
+    "decorder",
+    "exhaustive",
+    "gofumpt",
+    "gosmopolitan",
+    "mnd",
+    "nilnil",
+    "nolintlint",
+    "nonamedreturns",
+    "perfsprint",
+    "predeclared",
+    "reassign",
+    "revive",
+    "sloglint",
+    "unconvert",
+    "usestdlibvars",
+]
