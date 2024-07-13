@@ -1,4 +1,3 @@
-// Package server provides a HTTP server implementation for the Apollo stack.
 package server
 
 import (

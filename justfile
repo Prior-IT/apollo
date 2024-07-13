@@ -4,10 +4,16 @@ export GOOSE_MIGRATION_DIR := "./migrations"
 default:
   @just --list --justfile {{justfile()}}
 
-# Build
+# Build the library
 build:
-  @templ generate
+  @templ generate -include-version=false
   @go build ./...
+
+# Run a documentation server
+docs port="8080":
+  @echo Open your browser on http://localhost:{{port}}/
+  @echo Apollo-specific documentation is on http://localhost:{{port}}/pkg/github.com/prior-it/apollo
+  @godoc -http=:{{port}}
 
 # Run all linters
 lint:
@@ -37,4 +43,17 @@ fuzz package:
 # Create a new migration with the specified name
 migration name:
   goose create {{name}} sql
+
+# Download and install all required cli tools and project dependencies
+setup:
+  # CLI tools
+  go install github.com/a-h/templ/cmd/templ@latest
+  go install github.com/air-verse/air@latest
+  go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+  go install github.com/pressly/goose/v3/cmd/goose@latest
+  pnpm install -g tailwindcss
+  # Dependencies
+  go mod tidy
+  go mod download
+  go mod verify
 
