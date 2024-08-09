@@ -1,5 +1,4 @@
 set positional-arguments
-export GOOSE_MIGRATION_DIR := "./migrations"
 
 default:
   @just --list --justfile {{justfile()}}
@@ -7,6 +6,7 @@ default:
 # Generate auxiliary files
 generate:
   @templ generate -include-version=false
+  @sqlc generate -f ./postgres/sqlc.yaml
 
 # Build the library
 build:
@@ -43,9 +43,10 @@ devtest *args="./...":
 fuzz package:
 	@go test -parallel {{ num_cpus() }} -fuzz=Fuzz -fuzztime 30s {{package}}
 
-# Create a new migration with the specified name
-migration name:
-  goose create {{name}} sql
+# Create a new postgres migration with the specified name
+newmigration name:
+  export GOOSE_MIGRATION_DIR := "./postgres/migrations"
+  @goose create {{name}} sql
 
 # Download and install all required cli tools and project dependencies
 setup:
