@@ -19,7 +19,7 @@ type (
 )
 
 // NewUserID parses a user id from any unsigned integer.
-func NewUserID(id uint32) (UserID, error) {
+func NewUserID(id uint) (UserID, error) {
 	if id == 0 {
 		return 0, errors.New("UserID cannot be 0")
 	}
@@ -35,7 +35,7 @@ func ParseUserID(id string) (UserID, error) {
 	if integerID < 0 {
 		return 0, errors.New("cannot parse user id: user ids cannot be negative")
 	}
-	userID, err := NewUserID(uint32(integerID))
+	userID, err := NewUserID(uint(integerID))
 	if err != nil {
 		return 0, fmt.Errorf("cannot parse user id: %w", err)
 	}
