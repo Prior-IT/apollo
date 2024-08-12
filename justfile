@@ -8,6 +8,18 @@ generate:
   @templ generate -include-version=false
   @sqlc generate -f ./postgres/sqlc.yaml
 
+# Continuously generate auxiliary files on every file save
+dev:
+  @air \
+    -build.cmd="just generate" \
+    -build.include_ext="go,templ,sql" \
+    -build.exclude_regex="_templ.go" \
+    -build.exclude_dir="migrations,postgres/internal" \
+    -build.stop_on_error="true" \
+    -build.bin="" \
+    -c "/dev/null"
+
+
 # Build the library
 build:
   @go build ./...

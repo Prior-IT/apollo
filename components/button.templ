@@ -1,0 +1,72 @@
+package components
+
+type buttonType int
+
+const (
+	ButtonType_Primary buttonType = iota
+	ButtonType_Secondary
+	ButtonType_Outline
+)
+
+var buttonTypeClass = map[buttonType]string{
+	ButtonType_Primary:   "bg-primary-light enabled:hover:bg-primary text-white shadow-primary-dark/60",
+	ButtonType_Secondary: "bg-secondary enabled:hover:bg-secondary-dark text-white shadow-secondary-dark/60",
+	ButtonType_Outline:   "border border-slate-600 text-slate-800 enabled:hover:bg-slate-200/50 shadow-slate-800/40",
+}
+
+type htmlType int
+
+const (
+	HtmlType_Button htmlType = iota
+	HtmlType_Submit
+	HtmlType_Reset
+	HtmlType_Menu
+)
+
+var htmlTypeToString = map[htmlType]string{
+	HtmlType_Button: "button",
+	HtmlType_Submit: "submit",
+	HtmlType_Reset:  "reset",
+	HtmlType_Menu:   "menu",
+}
+
+type ButtonProps struct {
+	// The semantic button type, different types will have consistently different visual styles
+	Type     buttonType
+	// The HTML button type
+	HtmlType htmlType
+	// If set, clicking the button will trigger a htmx get request
+	HxGet    string
+	// If set, the button will become a standalone, full-width button
+	Block    bool
+	// If set, the button will be disabled
+	Disabled bool
+	// Additional class(es) to append to the button element
+	Class    string
+	// Additional attributes that will be added to the button element
+	Attrs    templ.Attributes
+}
+
+templ Button(props ButtonProps) {
+	<button
+		type={ htmlTypeToString[props.HtmlType] }
+		class={
+			"rounded-lg py-2 px-8 gap-2 shadow enabled:hover:shadow-sm",
+			"flex flex-row items-center justify-center",
+			"disabled:opacity-50 disabled:cursor-not-allowed",
+			props.Class,
+			buttonTypeClass[props.Type],
+			templ.KV("w-full block", props.Block),
+			templ.KV("inline-block", !props.Block),
+		}
+		if len(props.HxGet) > 0 {
+			hx-get={ props.HxGet }
+		}
+		if props.Disabled {
+			disabled
+		}
+		{ props.Attrs... }
+	>
+		{ children... }
+	</button>
+}
