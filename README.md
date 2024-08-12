@@ -15,6 +15,14 @@ If you want to hot reload tests (e.g. while writing or tweaking them), you can u
 You can also run `just devtest ./server/...` or `just test ./server/...` to only run tests for those directories.
 Or run `just test -run Users ./...` (and the same for devtest) to only run tests that contain "Users" in their name.
 
+## TODO
+- [x] Core
+- [x] Postgres core
+- [x] OAuth login
+- [ ] Organisations
+- [ ] Permissions
+- [ ] EntraID login
+- [ ] Magic e-mail login
 
 ## Technologies
 The following technologies are part of the Apollo tech stack:
