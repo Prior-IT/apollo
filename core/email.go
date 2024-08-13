@@ -7,15 +7,15 @@ import (
 )
 
 type EmailAddress interface {
-	// ToString returns the string representation for this e-mail address
-	ToString() string
+	// String returns the string representation for this e-mail address
+	String() string
 }
 
 type emailAddress struct {
 	address string
 }
 
-func (email emailAddress) ToString() string {
+func (email emailAddress) String() string {
 	return email.address
 }
 

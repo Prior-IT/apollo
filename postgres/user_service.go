@@ -27,7 +27,7 @@ func (u *UserService) CreateUser(
 ) (*core.User, error) {
 	user, err := u.q.CreateUser(ctx, sqlc.CreateUserParams{
 		Name:  data.Name,
-		Email: data.Email.ToString(),
+		Email: data.Email.String(),
 	})
 	if err != nil {
 		return nil, err
