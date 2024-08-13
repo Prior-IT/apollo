@@ -59,8 +59,7 @@ fuzz package:
 
 # Create a new postgres migration with the specified name
 newmigration name:
-  export GOOSE_MIGRATION_DIR := "./postgres/migrations"
-  @goose create {{name}} sql
+  @GOOSE_MIGRATION_DIR="./postgres/migrations" goose create {{name}} sql
 
 # Download and install all required cli tools and project dependencies
 setup:

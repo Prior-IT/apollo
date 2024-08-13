@@ -83,3 +83,17 @@ func (s *PgOauthAccountService) FindUser(
 	// core.ErrUserDoesNotExist
 	return convertUser(user)
 }
+
+func (s *PgOauthAccountService) CacheUserData(
+	ctx context.Context,
+	data *login.UserData,
+) (*login.UserDataCacheID, error) {
+	panic("unimplemented")
+}
+
+func (s *PgOauthAccountService) GetCachedUserData(
+	ctx context.Context,
+	id *login.UserDataCacheID,
+) (*login.UserData, error) {
+	panic("unimplemented")
+}

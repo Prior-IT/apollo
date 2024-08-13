@@ -14,6 +14,14 @@ type ApolloAccount struct {
 	ProviderID string
 }
 
+type ApolloAccountCache struct {
+	ID         pgtype.UUID
+	Name       *string
+	Email      *string
+	Provider   string
+	ProviderID string
+}
+
 type ApolloUser struct {
 	ID     int32
 	Name   string

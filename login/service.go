@@ -3,6 +3,7 @@ package login
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/prior-it/apollo/core"
 )
 
@@ -14,6 +15,10 @@ type UserData struct {
 	// External user id, currently only used with OAuth
 	ProviderID string `form:"provider_id" json:"provider_id"`
 }
+
+type (
+	UserDataCacheID uuid.UUID
+)
 
 type Service interface {
 	// Return the url that the user should be redirected to to start logging in.
@@ -36,6 +41,18 @@ type AccountService interface {
 		ctx context.Context,
 		data *UserData,
 	) (*core.User, error)
+
+	// Cache user data so it can be retrieved later and return the cache id.
+	CacheUserData(
+		ctx context.Context,
+		data *UserData,
+	) (*UserDataCacheID, error)
+
+	// Return cached user data based on its cache id.
+	GetCachedUserData(
+		ctx context.Context,
+		id *UserDataCacheID,
+	) (*UserData, error)
 
 	// Find and retrieve a user for the login UserData.
 	// If the user does not exist, this will return core.ErrUserDoesNotExist.
