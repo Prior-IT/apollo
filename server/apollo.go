@@ -81,16 +81,19 @@ func (apollo *Apollo) Host() string {
 	return apollo.Request.Host
 }
 
-// Path returns the path of the request.
+// Path returns the full path of the request.
 func (apollo *Apollo) Path() string {
 	return apollo.Request.URL.Path
 }
 
-// PathValue returns the value for the named path wildcard in the router pattern
+// GetPath returns the value for the named path wildcard in the router pattern
 // that matched the request.
 // It returns the empty string if the request was not matched against a pattern
 // or there is no such wildcard in the pattern.
-func (apollo *Apollo) PathValue(key string) string {
+//
+// E.g.: A route defined as `/users/{id}` can call `GetPath("id")` to return the
+// value for "id" in the current path.
+func (apollo *Apollo) GetPath(key string) string {
 	return apollo.Request.PathValue(key)
 }
 
