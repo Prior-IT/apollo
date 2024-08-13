@@ -5,13 +5,15 @@ default:
 
 # Generate auxiliary files
 generate:
-  @templ generate -include-version=false
-  @sqlc generate -f ./postgres/sqlc.yaml
+  templ generate -include-version=false
+  sqlc generate -f ./postgres/sqlc.yaml
+  tailwindcss -i components/input.css -o components/static/apollo.css -m
 
 # Continuously generate auxiliary files on every file save
 dev:
   @air \
-    -build.cmd="just generate" \
+    -build.cmd="just build" \
+    -build.pre_cmd="just generate" \
     -build.include_ext="go,templ,sql" \
     -build.exclude_regex="_templ.go" \
     -build.exclude_dir="migrations,postgres/internal" \
@@ -22,7 +24,7 @@ dev:
 
 # Build the library
 build:
-  @go build ./...
+  go build ./...
 
 # Run a documentation server
 docs port="8080":

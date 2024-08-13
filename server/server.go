@@ -136,12 +136,13 @@ func (server *Server[state]) Handle(pattern string, handler http.Handler) *Serve
 // StaticFiles serves all files in the `dir` directory or the `fs` FileSystem at the `pattern` url.
 // In debug mode, assets will be loaded from disk to support hot-reloading.
 // In production mode, assets will be gzipped and embedded in the executable instead.
+// Debug mode hot-reloading will be disabled if dir is set to the empty string.
 //
 // Example:
 //
 //	server.StaticFiles("/assets/", "./static/", assetsFS)
 func (server *Server[state]) StaticFiles(pattern string, dir string, fs embed.FS) {
-	if server.isDebug {
+	if server.isDebug && len(dir) > 0 {
 		server.Handle(
 			pattern+"*",
 			http.StripPrefix(pattern, http.FileServer(http.Dir(dir))),
