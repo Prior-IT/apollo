@@ -27,17 +27,6 @@ INSERT INTO apollo.users (name, email)
 RETURNING
     *;
 
--- name: GetUserForProvider :one
-SELECT
-    users.*
-FROM
-    apollo.users
-    INNER JOIN apollo.accounts ON users.id = accounts.user_id
-WHERE
-    accounts.provider = $1
-    AND accounts.provider_id = $2
-LIMIT 1;
-
 -- name: DeleteUser :exec
 DELETE FROM apollo.users
 WHERE id = $1;

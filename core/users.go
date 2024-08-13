@@ -51,8 +51,6 @@ func ParseUserID(id string) (UserID, error) {
  * APPLICATION
  */
 
-var ErrUserDoesNotExist = errors.New("that user does not exist")
-
 type UserCreateData struct {
 	Name  string
 	Email EmailAddress

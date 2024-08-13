@@ -1,6 +1,10 @@
 package login
 
-import "context"
+import (
+	"context"
+
+	"github.com/prior-it/apollo/core"
+)
 
 type UserData struct {
 	Name  string `form:"name"        json:"name"`
@@ -24,4 +28,19 @@ type Service interface {
 		code string,
 		redirectURL string,
 	) (*UserData, error)
+}
+
+type AccountService interface {
+	// Create a new user and their account.
+	CreateUserAccount(
+		ctx context.Context,
+		data *UserData,
+	) (*core.User, error)
+
+	// Find and retrieve a user for the login UserData.
+	// If the user does not exist, this will return core.ErrUserDoesNotExist.
+	FindUser(
+		ctx context.Context,
+		data *UserData,
+	) (*core.User, error)
 }

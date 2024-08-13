@@ -79,35 +79,6 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (ApolloUser, error) {
 	return i, err
 }
 
-const getUserForProvider = `-- name: GetUserForProvider :one
-SELECT
-    users.id, users.name, users.email, users.joined
-FROM
-    apollo.users
-    INNER JOIN apollo.accounts ON users.id = accounts.user_id
-WHERE
-    accounts.provider = $1
-    AND accounts.provider_id = $2
-LIMIT 1
-`
-
-type GetUserForProviderParams struct {
-	Provider   string
-	ProviderID string
-}
-
-func (q *Queries) GetUserForProvider(ctx context.Context, arg GetUserForProviderParams) (ApolloUser, error) {
-	row := q.db.QueryRow(ctx, getUserForProvider, arg.Provider, arg.ProviderID)
-	var i ApolloUser
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Email,
-		&i.Joined,
-	)
-	return i, err
-}
-
 const listUsers = `-- name: ListUsers :many
 SELECT
     id, name, email, joined
