@@ -2,6 +2,7 @@ package login
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/prior-it/apollo/core"
@@ -16,9 +17,17 @@ type UserData struct {
 	ProviderID string `form:"provider_id" json:"provider_id"`
 }
 
-type (
-	UserDataCacheID uuid.UUID
-)
+type UserDataCacheID struct {
+	uuid.UUID
+}
+
+func ParseUserDataCacheID(value string) (*UserDataCacheID, error) {
+	UUID, err := uuid.Parse(value)
+	if err != nil {
+		return nil, err
+	}
+	return &UserDataCacheID{UUID}, nil
+}
 
 type Service interface {
 	// Return the url that the user should be redirected to to start logging in.
@@ -53,6 +62,12 @@ type AccountService interface {
 		ctx context.Context,
 		id *UserDataCacheID,
 	) (*UserData, error)
+
+	// Delete all cache entries older than the specified duration.
+	DeleteOldCacheEntries(
+		ctx context.Context,
+		age time.Duration,
+	) error
 
 	// Find and retrieve a user for the login UserData.
 	// If the user does not exist, this will return core.ErrUserDoesNotExist.

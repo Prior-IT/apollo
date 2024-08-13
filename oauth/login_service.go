@@ -10,21 +10,18 @@ import (
 	"strings"
 
 	"github.com/go-chi/render"
-	"github.com/prior-it/apollo/core"
 	"github.com/prior-it/apollo/login"
 )
 
 func NewLoginService(
-	userService core.UserService,
 	providers map[string]ProviderConfig,
 ) *LoginService {
-	return &LoginService{userService, providers}
+	return &LoginService{providers}
 }
 
 // Postgres implementation of the core LoginService interface.
 type LoginService struct {
-	userService core.UserService
-	providers   map[string]ProviderConfig
+	providers map[string]ProviderConfig
 }
 
 // Force struct to implement the core interface

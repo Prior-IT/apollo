@@ -20,6 +20,7 @@ type ApolloAccountCache struct {
 	Email      *string
 	Provider   string
 	ProviderID string
+	Created    pgtype.Timestamptz
 }
 
 type ApolloUser struct {

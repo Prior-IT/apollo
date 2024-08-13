@@ -23,6 +23,10 @@ type (
 	UserID uint
 )
 
+func (id UserID) String() string {
+	return strconv.FormatUint(uint64(id), 10)
+}
+
 // NewUserID parses a user id from any unsigned integer.
 func NewUserID(id uint) (UserID, error) {
 	if id == 0 {
