@@ -18,8 +18,5 @@ coverage.*
 # Templ generated output
 *_templ.txt
 
-# Tailwind output
-apollo.css
-
 # System files
 .DS_Store
