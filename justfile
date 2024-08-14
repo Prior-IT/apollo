@@ -14,7 +14,7 @@ default:
 generate:
   @go run {{templ}} generate -include-version=false
   @go run {{sqlc}} generate -f ./postgres/sqlc.yaml
-  @npx {{tailwind}} -i components/input.css -o components/static/apollo.css -m
+  @npx {{tailwind}} -i components/input.css -o components/apollo.css -m
 
 # Continuously generate auxiliary files on every file save
 dev:

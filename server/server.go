@@ -1,8 +1,8 @@
 package server
 
 import (
-	"embed"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 
@@ -141,7 +141,7 @@ func (server *Server[state]) Handle(pattern string, handler http.Handler) *Serve
 // Example:
 //
 //	server.StaticFiles("/assets/", "./static/", assetsFS)
-func (server *Server[state]) StaticFiles(pattern string, dir string, fs embed.FS) {
+func (server *Server[state]) StaticFiles(pattern string, dir string, files fs.ReadDirFS) {
 	if server.isDebug && len(dir) > 0 {
 		server.Handle(
 			pattern+"*",
@@ -150,7 +150,7 @@ func (server *Server[state]) StaticFiles(pattern string, dir string, fs embed.FS
 	} else {
 		server.Handle(
 			pattern+"*",
-			middleware.NoCache(statigz.FileServer(fs, statigz.EncodeOnInit)),
+			http.StripPrefix(pattern, middleware.NoCache(statigz.FileServer(files, statigz.EncodeOnInit))),
 		)
 	}
 }
