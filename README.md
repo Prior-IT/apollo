@@ -25,6 +25,7 @@ Or run `just test -run Users ./...` (and the same for devtest) to only run tests
 - [ ] Magic e-mail login
 - [ ] Move account cache to a separate service (so you can use redis for caching while still storing accounts in postgres)
 - [ ] Alert component
+- [ ] E-mail verification
 
 ## Technologies
 The following technologies are part of the Apollo tech stack:
