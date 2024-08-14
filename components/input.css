@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+
+	a[hx-get],
+	a[hx-post] {
+		cursor: pointer;
+	}
+}
