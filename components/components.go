@@ -7,7 +7,7 @@ import (
 	"github.com/prior-it/apollo/server"
 )
 
-//go:embed apollo.css
+//go:embed static/*
 var EmbedStatic embed.FS
 
 // Serve the Apollo static files using the specified server at the specified endpoint.

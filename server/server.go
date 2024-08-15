@@ -137,6 +137,8 @@ func (server *Server[state]) Handle(pattern string, handler http.Handler) *Serve
 // In debug mode, assets will be loaded from disk to support hot-reloading.
 // In production mode, assets will be gzipped and embedded in the executable instead.
 // Debug mode hot-reloading will be disabled if dir is set to the empty string.
+// Filesystems will ignore `/static` folders and instead directly target the files inside. So if your
+// filesystem has a file "/static/file.txt", you can get it directly with "/file.txt".
 //
 // Example:
 //
@@ -154,7 +156,7 @@ func (server *Server[state]) StaticFiles(pattern string, dir string, files fs.Re
 			pattern+"*",
 			http.StripPrefix(pattern,
 				middleware.NoCache(
-					statigz.FileServer(files, statigz.EncodeOnInit),
+					statigz.FileServer(files, statigz.EncodeOnInit, statigz.FSPrefix("static")),
 				),
 			),
 		)
