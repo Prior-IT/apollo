@@ -145,12 +145,18 @@ func (server *Server[state]) StaticFiles(pattern string, dir string, files fs.Re
 	if server.isDebug && len(dir) > 0 {
 		server.Handle(
 			pattern+"*",
-			http.StripPrefix(pattern, http.FileServer(http.Dir(dir))),
+			http.StripPrefix(pattern,
+				http.FileServer(http.Dir(dir)),
+			),
 		)
 	} else {
 		server.Handle(
 			pattern+"*",
-			http.StripPrefix(pattern, middleware.NoCache(statigz.FileServer(files, statigz.EncodeOnInit))),
+			http.StripPrefix(pattern,
+				middleware.NoCache(
+					statigz.FileServer(files, statigz.EncodeOnInit),
+				),
+			),
 		)
 	}
 }
