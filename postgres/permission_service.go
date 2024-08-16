@@ -5,9 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/prior-it/apollo/core"
 	"github.com/prior-it/apollo/permissions"
 	"github.com/prior-it/apollo/postgres/internal/sqlc"
@@ -50,31 +48,18 @@ func (p *PermissionService) CreatePermissionGroup(
 	var NewGroup sqlc.ApolloPermissiongroup
 	if Group.ID > 0 {
 		NewGroup, err = q.CreatePermissionGroupWithID(ctx, int32(Group.ID), &Group.Name)
-
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			switch pgErr.Code {
-			case pgerrcode.UniqueViolation:
-				return nil, errors.Join(core.ErrConflict, err)
-			default:
-				return nil, fmt.Errorf(
-					"could not create a new permission group with id %v: %w",
-					Group.ID,
-					err,
-				)
-			}
-		} else if err != nil {
+		if err != nil {
 			return nil, fmt.Errorf(
 				"could not create a new permission group with id %v: %w",
 				Group.ID,
-				err,
+				convertPgError(err),
 			)
 		}
 
 	} else {
 		NewGroup, err = q.CreatePermissionGroup(ctx, &Group.Name)
 		if err != nil {
-			return nil, fmt.Errorf("could not create the new permission group: %w", err)
+			return nil, fmt.Errorf("could not create the new permission group: %w", convertPgError(err))
 		}
 	}
 
