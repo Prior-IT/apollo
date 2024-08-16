@@ -61,7 +61,7 @@ func (u *UserService) GetUser(ctx context.Context, id core.UserID) (*core.User, 
 }
 
 // ListUsers implements core.UserService.
-func (u *UserService) ListUsers(ctx context.Context) ([]*core.User, error) {
+func (u *UserService) ListUsers(ctx context.Context) ([]core.User, error) {
 	users, err := u.q.ListUsers(ctx)
 	if err != nil {
 		return nil, convertPgError(err)
@@ -92,14 +92,17 @@ func convertUser(user sqlc.ApolloUser) (*core.User, error) {
 	}, nil
 }
 
-func convertUserList(users []sqlc.ApolloUser) ([]*core.User, error) {
-	newlist := make([]*core.User, len(users))
+func convertUserList(users []sqlc.ApolloUser) ([]core.User, error) {
+	list := make([]core.User, len(users))
 	for i, v := range users {
 		u, err := convertUser(v)
 		if err != nil {
 			return nil, err
 		}
-		newlist[i] = u
+		if u == nil {
+			return nil, errors.New("both user and error should never be nil")
+		}
+		list[i] = *u
 	}
-	return newlist, nil
+	return list, nil
 }
