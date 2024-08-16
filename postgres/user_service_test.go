@@ -53,10 +53,7 @@ func TestUserService(t *testing.T) {
 				description: "name and email empty",
 			},
 		} {
-			user, err := service.CreateUser(ctx, core.UserCreateData{
-				Name:  data.name,
-				Email: data.email,
-			})
+			user, err := service.CreateUser(ctx, data.name, data.email)
 			if data.email != nil {
 				tests.Check(err)
 				assert.NotNil(t, user, data.description)
@@ -71,17 +68,11 @@ func TestUserService(t *testing.T) {
 	t.Run("err: create duplicate user", func(t *testing.T) {
 		email, err := core.NewEmailAddress(tests.Faker.Email())
 		tests.Check(err)
-		user1, err := service.CreateUser(ctx, core.UserCreateData{
-			Name:  tests.Faker.Name(),
-			Email: email,
-		})
+		user1, err := service.CreateUser(ctx, tests.Faker.Name(), email)
 		tests.Check(err)
 		assert.NotNil(t, user1, "The first user should be created correctly")
 
-		user2, err := service.CreateUser(ctx, core.UserCreateData{
-			Name:  tests.Faker.Name(),
-			Email: email,
-		})
+		user2, err := service.CreateUser(ctx, tests.Faker.Name(), email)
 		assert.NotNil(t, err, "The duplicate user should return an error")
 		assert.Nil(t, user2, "The duplicate user should return nil for the user")
 		assert.ErrorIs(t, err, core.ErrConflict, "The duplicate user should return ErrConflict")
@@ -90,10 +81,7 @@ func TestUserService(t *testing.T) {
 	t.Run("ok: get user", func(t *testing.T) {
 		email, err := core.NewEmailAddress("getuserok@example.com")
 		tests.Check(err)
-		user, err := service.CreateUser(ctx, core.UserCreateData{
-			Name:  tests.Faker.Name(),
-			Email: email,
-		})
+		user, err := service.CreateUser(ctx, tests.Faker.Name(), email)
 		tests.Check(err)
 
 		user2, err := service.GetUser(ctx, user.ID)
@@ -105,10 +93,7 @@ func TestUserService(t *testing.T) {
 	t.Run("ok: delete user", func(t *testing.T) {
 		email, err := core.NewEmailAddress("deleteuserok@example.com")
 		tests.Check(err)
-		user, err := service.CreateUser(ctx, core.UserCreateData{
-			Name:  tests.Faker.Name(),
-			Email: email,
-		})
+		user, err := service.CreateUser(ctx, tests.Faker.Name(), email)
 		tests.Check(err)
 
 		tests.Check(service.DeleteUser(ctx, user.ID))
@@ -122,10 +107,7 @@ func TestUserService(t *testing.T) {
 	t.Run("ok: update user admin", func(t *testing.T) {
 		email, err := core.NewEmailAddress("updateadminok@example.com")
 		tests.Check(err)
-		user, err := service.CreateUser(ctx, core.UserCreateData{
-			Name:  tests.Faker.Name(),
-			Email: email,
-		})
+		user, err := service.CreateUser(ctx, tests.Faker.Name(), email)
 		tests.Check(err)
 		assert.False(t, user.Admin, "Admin should be false by default")
 

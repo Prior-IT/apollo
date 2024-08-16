@@ -56,18 +56,13 @@ func ParseUserID(id string) (UserID, error) {
  * APPLICATION
  */
 
-type UserCreateData struct {
-	Name  string
-	Email EmailAddress
-}
-
 type UserService interface {
 	// Create a new user with the specified data.
-	CreateUser(ctx context.Context, data UserCreateData) (*User, error)
+	CreateUser(ctx context.Context, name string, email EmailAddress) (*User, error)
 	// Retrieve the user with the specified id or ErrUserDoesNotExist if no such user exists.
 	GetUser(ctx context.Context, id UserID) (*User, error)
 	// Retrieve all existing users.
-	ListUsers(ctx context.Context) ([]*User, error)
+	ListUsers(ctx context.Context) ([]User, error)
 	// Retrieve the amount of existing users.
 	GetAmountOfUsers(ctx context.Context) (uint64, error)
 	// Delete the user with the specified id or ErrUserDoesNotExist if no such user exists.
