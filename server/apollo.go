@@ -31,7 +31,9 @@ type Apollo struct {
 // E.g. fields that are stored in the active session.
 func (apollo *Apollo) populate() {
 	User, err := apollo.retrieveUser()
-	if err != nil {
+	if err == core.ErrUnauthenticated {
+		apollo.User = nil
+	} else if err != nil {
 		slog.Error("Could not retrieve user object from session", "error", err)
 	} else {
 		apollo.User = User
