@@ -3,6 +3,7 @@ package permissions
 import (
 	"log/slog"
 	"maps"
+	"strconv"
 )
 
 type (
@@ -13,10 +14,16 @@ func (p Permission) String() string {
 	return string(p)
 }
 
+type PermissionGroupID uint
+
 type PermissionGroup struct {
-	ID          int
+	ID          PermissionGroupID
 	Name        string
 	Permissions map[Permission]bool
+}
+
+func (id PermissionGroupID) String() string {
+	return strconv.FormatUint(uint64(id), 10)
 }
 
 func (pg *PermissionGroup) Get(permission Permission) bool {

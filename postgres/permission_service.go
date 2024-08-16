@@ -96,7 +96,7 @@ func (p *PermissionService) CreatePermissionGroup(
 		return nil, fmt.Errorf("could not commit transaction: %w", err)
 	}
 
-	Group.ID = int(NewGroup.ID)
+	Group.ID = permissions.PermissionGroupID(NewGroup.ID)
 	return Group, nil
 }
 
@@ -144,7 +144,7 @@ func (p *PermissionService) ListPermissionGroupsForUser(
 // GetPermissionGroup implements permissions.Service.
 func (p *PermissionService) GetPermissionGroup(
 	ctx context.Context,
-	ID int,
+	ID permissions.PermissionGroupID,
 ) (*permissions.PermissionGroup, error) {
 	tx, err := p.db.Begin(ctx)
 	if err != nil {
@@ -193,7 +193,7 @@ func (p *PermissionService) HasAny(
 // RenamePermissionGroup implements permissions.Service.
 func (p *PermissionService) RenamePermissionGroup(
 	ctx context.Context,
-	ID int,
+	ID permissions.PermissionGroupID,
 	Name string,
 ) error {
 	return p.q.RenamePermissionGroup(ctx, int32(ID), &Name)
@@ -232,7 +232,10 @@ func (p *PermissionService) UpdatePermissionGroup(
 }
 
 // DeletePermissionGroup implements permissions.Service.
-func (p *PermissionService) DeletePermissionGroup(ctx context.Context, GroupID int) error {
+func (p *PermissionService) DeletePermissionGroup(
+	ctx context.Context,
+	GroupID permissions.PermissionGroupID,
+) error {
 	return p.q.DeletePermissionGroup(ctx, int32(GroupID))
 }
 
@@ -240,7 +243,7 @@ func (p *PermissionService) DeletePermissionGroup(ctx context.Context, GroupID i
 func (p *PermissionService) AddUserToPermissionGroup(
 	ctx context.Context,
 	UserID core.UserID,
-	GroupID int,
+	GroupID permissions.PermissionGroupID,
 ) error {
 	return p.q.AddUserToPermissionGroup(ctx, int32(GroupID), int32(UserID))
 }
@@ -273,7 +276,7 @@ func combinePermissionGroup(
 		Name = *group.Name
 	}
 	return permissions.PermissionGroup{
-		ID:          int(group.ID),
+		ID:          permissions.PermissionGroupID(group.ID),
 		Name:        Name,
 		Permissions: cvtPermissions(perms),
 	}
