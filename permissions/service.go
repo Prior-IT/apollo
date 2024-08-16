@@ -9,6 +9,8 @@ import (
 type Service interface {
 	// Store a new permission, if it doesn't already exist
 	RegisterPermission(ctx context.Context, permission Permission) error
+	// Lists all permissions that have been registered before
+	ListPermissions(ctx context.Context) ([]Permission, error)
 	// Return a permission group by its ID.
 	// If the group does not exist, this returns core.ErrNotFound
 	GetPermissionGroup(ctx context.Context, ID int) (*PermissionGroup, error)
@@ -22,8 +24,8 @@ type Service interface {
 	RenamePermissionGroup(ctx context.Context, ID int, Name string) error
 	// Returns whether or not the specified user has the specified permission in any of its permission groups.
 	HasAny(ctx context.Context, UserID core.UserID, permission Permission) (bool, error)
-	// Returns all permission groups for the specified user
-	GetAllPermissionGroups(ctx context.Context, UserID core.UserID) ([]PermissionGroup, error)
+	// Lists all permission groups for the specified user
+	ListPermissionGroups(ctx context.Context, UserID core.UserID) ([]PermissionGroup, error)
 	// Add an existing user to an existing permission group
 	AddUserToPermissionGroup(ctx context.Context, UserID core.UserID, GroupID int) error
 	// Return the combined permissions for the specified user.
