@@ -13,7 +13,6 @@ import (
 type Organisation struct {
 	ID      OrganisationID
 	Name    string
-	Address string
 }
 
 type (
