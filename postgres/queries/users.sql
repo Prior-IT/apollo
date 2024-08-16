@@ -30,3 +30,11 @@ RETURNING
 -- name: DeleteUser :exec
 DELETE FROM apollo.users
 WHERE id = $1;
+
+-- name: UpdateUserAdmin :exec
+UPDATE
+    apollo.users
+SET
+    admin = $2
+WHERE
+    id = $1;

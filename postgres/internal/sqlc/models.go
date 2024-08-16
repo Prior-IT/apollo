@@ -23,9 +23,30 @@ type ApolloAccountCache struct {
 	Created    pgtype.Timestamptz
 }
 
+type ApolloPermission struct {
+	Name string
+}
+
+type ApolloPermissiongroup struct {
+	ID   int32
+	Name *string
+}
+
+type ApolloPermissiongroupPermission struct {
+	GroupID    int32
+	Permission string
+	Enabled    bool
+}
+
 type ApolloUser struct {
 	ID     int32
 	Name   string
 	Email  string
 	Joined pgtype.Timestamptz
+	Admin  bool
+}
+
+type ApolloUserPermissiongroupMembership struct {
+	GroupID int32
+	UserID  int32
 }

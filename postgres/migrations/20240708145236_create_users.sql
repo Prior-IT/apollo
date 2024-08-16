@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE SCHEMA IF NOT EXISTS apollo;
 
-CREATE TABLE apollo.users (
+CREATE TABLE IF NOT EXISTS apollo.users (
     id serial NOT NULL,
     name text NOT NULL,
     email text NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE apollo.users (
     UNIQUE (email)
 );
 
-CREATE TABLE apollo.accounts (
+CREATE TABLE IF NOT EXISTS apollo.accounts (
     user_id serial NOT NULL,
     provider text NOT NULL,
     provider_id text NOT NULL,

@@ -25,10 +25,7 @@ func (u *UserService) CreateUser(
 	ctx context.Context,
 	data core.UserCreateData,
 ) (*core.User, error) {
-	user, err := u.q.CreateUser(ctx, sqlc.CreateUserParams{
-		Name:  data.Name,
-		Email: data.Email.String(),
-	})
+	user, err := u.q.CreateUser(ctx, data.Name, data.Email.String())
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +64,11 @@ func (u *UserService) ListUsers(ctx context.Context) ([]*core.User, error) {
 	return convertUserList(users)
 }
 
+// UpdateUserAdmin implements core.UserService.
+func (u *UserService) UpdateUserAdmin(ctx context.Context, id core.UserID, admin bool) error {
+	return u.q.UpdateUserAdmin(ctx, int32(id), admin)
+}
+
 func convertUser(user sqlc.ApolloUser) (*core.User, error) {
 	email, err := core.NewEmailAddress(user.Email)
 	if err != nil {
@@ -80,6 +82,7 @@ func convertUser(user sqlc.ApolloUser) (*core.User, error) {
 		ID:     id,
 		Name:   user.Name,
 		Email:  email,
+		Admin:  user.Admin,
 		Joined: user.Joined.Time,
 	}, nil
 }

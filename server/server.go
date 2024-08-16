@@ -1,15 +1,21 @@
 package server
 
 import (
+	"context"
+	"encoding/gob"
 	"fmt"
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
+	"github.com/gorilla/sessions"
+	"github.com/prior-it/apollo/core"
+	"github.com/prior-it/apollo/permissions"
 	"github.com/vearutop/statigz"
 )
 
@@ -19,13 +25,15 @@ type (
 )
 
 type Server[state any] struct {
-	mux          *chi.Mux
-	state        state
-	logger       *slog.Logger
-	layout       templ.Component
-	errorHandler ErrorHandler
-	isDebug      bool
-	useSSL       bool
+	mux               *chi.Mux
+	state             state
+	logger            *slog.Logger
+	layout            templ.Component
+	errorHandler      ErrorHandler
+	isDebug           bool
+	useSSL            bool
+	permissionService permissions.Service
+	sessionStore      sessions.Store
 }
 
 type Handler[state any] func(apollo *Apollo, state state) error
@@ -92,22 +100,79 @@ func (server *Server[state]) WithSSL(useSSL bool) *Server[state] {
 	return server
 }
 
+func (server *Server[state]) WithPermissionService(service permissions.Service) *Server[state] {
+	server.permissionService = service
+	return server
+}
+
+func (server *Server[state]) WithSessionStore(store sessions.Store) *Server[state] {
+	server.sessionStore = store
+	return server
+}
+
 func (server *Server[state]) handle(handler Handler[state]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		apollo := Apollo{
-			Writer:  w,
-			Request: r,
-			logger:  server.logger,
-			layout:  server.layout,
-			IsDebug: server.isDebug,
-			UseSSL:  server.useSSL,
+			Writer:      w,
+			Request:     r,
+			logger:      server.logger,
+			layout:      server.layout,
+			IsDebug:     server.isDebug,
+			UseSSL:      server.useSSL,
+			permissions: server.permissionService,
+			store:       server.sessionStore,
 		}
+		apollo.populate()
 		err := handler(&apollo, server.state)
 		if err != nil {
 			server.errorHandler(&apollo, err)
 		}
 		_ = r.Body.Close()
 	}
+}
+
+// Attach the Apollo middleware.
+// Call this right after configuring the server but before adding routes.
+func (server *Server[state]) AttachApolloMiddleware() {
+	middleware := func(next http.Handler) http.Handler {
+		if server.sessionStore == nil {
+			panic("You need to configure the session store before attaching Apollo middleware")
+		}
+		gob.Register(core.UserID(0))
+		gob.Register(time.Time{})
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			// Attach session context
+			session, err := server.sessionStore.Get(r, cookieUser)
+			if err != nil {
+				slog.Error("Error while retrieving active session", "error", err)
+				return
+			}
+
+			ctx = context.WithValue(ctx, ctxSession, session)
+			ctx = context.WithValue(ctx, ctxDebug, server.isDebug)
+
+			loggedIn, ok := session.Values[sessionLoggedIn].(bool)
+			ctx = context.WithValue(ctx, ctxLoggedIn, ok && loggedIn)
+
+			isAdmin, ok := session.Values[sessionIsAdmin].(bool)
+			ctx = context.WithValue(ctx, ctxIsAdmin, ok && isAdmin)
+
+			userName, ok := session.Values[sessionUserName].(string)
+			if ok {
+				ctx = context.WithValue(ctx, ctxUserName, userName)
+			}
+
+			userID, ok := session.Values[sessionUserID].(core.UserID)
+			if ok {
+				ctx = context.WithValue(ctx, ctxUserID, userID)
+			}
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+	server.mux.Use(middleware)
 }
 
 // ServeHTTP implements [net/http.Handler].

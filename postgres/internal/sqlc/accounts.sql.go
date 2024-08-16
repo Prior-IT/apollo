@@ -34,19 +34,14 @@ DELETE FROM apollo.accounts
 WHERE provider = $1 AND provider_id = $2
 `
 
-type DeleteAccountParams struct {
-	Provider   string
-	ProviderID string
-}
-
-func (q *Queries) DeleteAccount(ctx context.Context, arg DeleteAccountParams) error {
-	_, err := q.db.Exec(ctx, deleteAccount, arg.Provider, arg.ProviderID)
+func (q *Queries) DeleteAccount(ctx context.Context, provider string, providerID string) error {
+	_, err := q.db.Exec(ctx, deleteAccount, provider, providerID)
 	return err
 }
 
 const getUserForProvider = `-- name: GetUserForProvider :one
 SELECT
-    users.id, users.name, users.email, users.joined
+    users.id, users.name, users.email, users.joined, users.admin
 FROM
     apollo.users
     INNER JOIN apollo.accounts ON users.id = accounts.user_id
@@ -56,19 +51,15 @@ WHERE
 LIMIT 1
 `
 
-type GetUserForProviderParams struct {
-	Provider   string
-	ProviderID string
-}
-
-func (q *Queries) GetUserForProvider(ctx context.Context, arg GetUserForProviderParams) (ApolloUser, error) {
-	row := q.db.QueryRow(ctx, getUserForProvider, arg.Provider, arg.ProviderID)
+func (q *Queries) GetUserForProvider(ctx context.Context, provider string, providerID string) (ApolloUser, error) {
+	row := q.db.QueryRow(ctx, getUserForProvider, provider, providerID)
 	var i ApolloUser
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Email,
 		&i.Joined,
+		&i.Admin,
 	)
 	return i, err
 }

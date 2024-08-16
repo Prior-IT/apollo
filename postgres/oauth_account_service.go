@@ -46,10 +46,7 @@ func (s *PgOauthAccountService) CreateUserAccount(
 		return nil, err
 	}
 
-	user, err := qtx.CreateUser(ctx, sqlc.CreateUserParams{
-		Name:  data.Name,
-		Email: email.String(),
-	})
+	user, err := qtx.CreateUser(ctx, data.Name, email.String())
 	if err != nil {
 		return nil, fmt.Errorf("cannot create user: %w", err)
 	}
@@ -74,10 +71,7 @@ func (s *PgOauthAccountService) FindUser(
 	ctx context.Context,
 	data *login.UserData,
 ) (*core.User, error) {
-	user, err := s.q.GetUserForProvider(ctx, sqlc.GetUserForProviderParams{
-		Provider:   data.Provider,
-		ProviderID: data.ProviderID,
-	})
+	user, err := s.q.GetUserForProvider(ctx, data.Provider, data.ProviderID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, core.ErrUserDoesNotExist
 	} else if err != nil {

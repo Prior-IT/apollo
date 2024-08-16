@@ -16,6 +16,7 @@ type User struct {
 	ID     UserID
 	Name   string
 	Email  EmailAddress
+	Admin  bool
 	Joined time.Time
 }
 
@@ -71,4 +72,6 @@ type UserService interface {
 	GetAmountOfUsers(ctx context.Context) (uint64, error)
 	// Delete the user with the specified id or ErrUserDoesNotExist if no such user exists.
 	DeleteUser(ctx context.Context, id UserID) error
+	// Update the user's admin state to the specified state.
+	UpdateUserAdmin(ctx context.Context, id UserID, admin bool) error
 }

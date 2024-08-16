@@ -10,15 +10,36 @@ import (
 	"github.com/a-h/templ"
 	"github.com/go-chi/httplog/v2"
 	"github.com/go-chi/render"
+	"github.com/gorilla/sessions"
+	"github.com/prior-it/apollo/core"
+	"github.com/prior-it/apollo/permissions"
 )
 
 type Apollo struct {
-	Writer  http.ResponseWriter
-	Request *http.Request
-	logger  *slog.Logger
-	layout  templ.Component
-	IsDebug bool
-	UseSSL  bool
+	Writer      http.ResponseWriter
+	Request     *http.Request
+	logger      *slog.Logger
+	layout      templ.Component
+	IsDebug     bool
+	UseSSL      bool
+	User        *core.User
+	permissions permissions.Service
+	store       sessions.Store
+}
+
+// Populate populates the Apollo object with fields that need to be retrieved after initialisation.
+// E.g. fields that are stored in the active session.
+func (apollo *Apollo) populate() {
+	User, err := apollo.retrieveUser()
+	if err != nil {
+		slog.Error("Could not retrieve user object from session", "error", err)
+	} else {
+		apollo.User = User
+	}
+	err = permissions.RegisterApolloPermissions(apollo.permissions)
+	if err != nil {
+		slog.Error("Could not register Apollo permissions", "error", err)
+	}
 }
 
 func (apollo *Apollo) StatusCode(code int) {
@@ -153,6 +174,52 @@ func (apollo *Apollo) CreateProtocolURL(endpoint string) string {
 		endpoint = "/" + endpoint
 	}
 	return fmt.Sprintf("%s%s%s", apollo.Protocol(), apollo.Request.Host, endpoint)
+}
+
+// RequiresLogin will return core.ErrUnauthenticated if there is no user logged in and nil otherwise.
+func (apollo *Apollo) RequiresLogin() error {
+	if apollo.User == nil {
+		return core.ErrUnauthenticated
+	}
+	return nil
+}
+
+// Requires will return core.ErrForbidden if the current user does not have the specified permission and nil otherwise.
+// If no user is logged in at all, this will return core.ErrUnauthenticated.
+func (apollo *Apollo) Requires(permission permissions.Permission) error {
+	if err := apollo.RequiresLogin(); err != nil {
+		return err
+	}
+	if !apollo.Has(permission) {
+		return core.ErrForbidden
+	}
+	return nil
+}
+
+// Has returns a boolean indicating whether or not the currently logged in user has the specified permission in any
+// of their permission groups or not. If no user is logged in, this will return false.
+func (apollo *Apollo) Has(permission permissions.Permission) bool {
+	if apollo.permissions == nil {
+		slog.Warn(
+			"Trying to use permission system while Apollo does not have access to a permissions.Service!",
+		)
+		return false
+	}
+	if apollo.User == nil {
+		slog.Warn(
+			"Trying to use permission system while no user is logged in!",
+		)
+		return false
+	}
+	if apollo.User.Admin {
+		return true
+	}
+	ok, err := apollo.permissions.HasAny(apollo.Context(), apollo.User.ID, permission)
+	if err != nil {
+		slog.Error("Error while checking permissions", "error", err)
+		return false
+	}
+	return ok
 }
 
 // Redirect will return a response that redirects the user to the specified url.

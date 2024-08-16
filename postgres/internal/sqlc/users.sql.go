@@ -13,22 +13,18 @@ const createUser = `-- name: CreateUser :one
 INSERT INTO apollo.users (name, email)
     VALUES ($1, $2)
 RETURNING
-    id, name, email, joined
+    id, name, email, joined, admin
 `
 
-type CreateUserParams struct {
-	Name  string
-	Email string
-}
-
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (ApolloUser, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.Name, arg.Email)
+func (q *Queries) CreateUser(ctx context.Context, name string, email string) (ApolloUser, error) {
+	row := q.db.QueryRow(ctx, createUser, name, email)
 	var i ApolloUser
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Email,
 		&i.Joined,
+		&i.Admin,
 	)
 	return i, err
 }
@@ -59,7 +55,7 @@ func (q *Queries) GetAmountOfUsers(ctx context.Context) (int64, error) {
 
 const getUser = `-- name: GetUser :one
 SELECT
-    id, name, email, joined
+    id, name, email, joined, admin
 FROM
     apollo.users
 WHERE
@@ -75,13 +71,14 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (ApolloUser, error) {
 		&i.Name,
 		&i.Email,
 		&i.Joined,
+		&i.Admin,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
 SELECT
-    id, name, email, joined
+    id, name, email, joined, admin
 FROM
     apollo.users
 ORDER BY
@@ -102,6 +99,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]ApolloUser, error) {
 			&i.Name,
 			&i.Email,
 			&i.Joined,
+			&i.Admin,
 		); err != nil {
 			return nil, err
 		}
@@ -111,4 +109,18 @@ func (q *Queries) ListUsers(ctx context.Context) ([]ApolloUser, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateUserAdmin = `-- name: UpdateUserAdmin :exec
+UPDATE
+    apollo.users
+SET
+    admin = $2
+WHERE
+    id = $1
+`
+
+func (q *Queries) UpdateUserAdmin(ctx context.Context, iD int32, admin bool) error {
+	_, err := q.db.Exec(ctx, updateUserAdmin, iD, admin)
+	return err
 }
