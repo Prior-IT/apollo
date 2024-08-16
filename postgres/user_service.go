@@ -24,12 +24,13 @@ var _ core.UserService = &UserService{}
 // CreateUser implements core.UserService.
 func (u *UserService) CreateUser(
 	ctx context.Context,
-	data core.UserCreateData,
+	name string,
+	email core.EmailAddress,
 ) (*core.User, error) {
-	if data.Email == nil {
+	if email == nil {
 		return nil, errors.New("email cannot be nil")
 	}
-	user, err := u.q.CreateUser(ctx, data.Name, data.Email.String())
+	user, err := u.q.CreateUser(ctx, name, email.String())
 	if err != nil {
 		return nil, convertPgError(err)
 	}
