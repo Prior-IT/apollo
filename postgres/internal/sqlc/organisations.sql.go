@@ -107,13 +107,12 @@ SELECT
 FROM
 	apollo.organisations AS o
 	INNER JOIN apollo.organisation_users AS ou ON o.id = ou.organisation_id
-	INNER JOIN apollo.users AS u ON u.id = ou.user_id
 WHERE
-	u.id = $1
+	ou.user_id = $1
 `
 
-func (q *Queries) ListOrganisationsForUser(ctx context.Context, id int32) ([]ApolloOrganisation, error) {
-	rows, err := q.db.Query(ctx, listOrganisationsForUser, id)
+func (q *Queries) ListOrganisationsForUser(ctx context.Context, userID int32) ([]ApolloOrganisation, error) {
+	rows, err := q.db.Query(ctx, listOrganisationsForUser, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -138,13 +137,12 @@ SELECT
 FROM
 	apollo.users AS u
 	INNER JOIN apollo.organisation_users AS ou ON u.id = ou.user_id
-	INNER JOIN apollo.organisations as o ON o.id = ou.organisation_id
 WHERE
-	o.id = $1
+	ou.organisation_id = $1
 `
 
-func (q *Queries) ListUsersInOrganisation(ctx context.Context, id int32) ([]ApolloUser, error) {
-	rows, err := q.db.Query(ctx, listUsersInOrganisation, id)
+func (q *Queries) ListUsersInOrganisation(ctx context.Context, organisationID int32) ([]ApolloUser, error) {
+	rows, err := q.db.Query(ctx, listUsersInOrganisation, organisationID)
 	if err != nil {
 		return nil, err
 	}
