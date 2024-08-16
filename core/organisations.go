@@ -11,8 +11,8 @@ import (
  */
 
 type Organisation struct {
-	ID      OrganisationID
-	Name    string
+	ID   OrganisationID
+	Name string
 }
 
 type (
