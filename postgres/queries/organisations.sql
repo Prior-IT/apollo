@@ -35,9 +35,8 @@ SELECT
 FROM
 	apollo.organisations AS o
 	INNER JOIN apollo.organisation_users AS ou ON o.id = ou.organisation_id
-	INNER JOIN apollo.users AS u ON u.id = ou.user_id
 WHERE
-	u.id = $1;
+	ou.user_id = $1;
 
 -- name: ListUsersInOrganisation :many
 SELECT
@@ -45,9 +44,8 @@ SELECT
 FROM
 	apollo.users AS u
 	INNER JOIN apollo.organisation_users AS ou ON u.id = ou.user_id
-	INNER JOIN apollo.organisations as o ON o.id = ou.organisation_id
 WHERE
-	o.id = $1;
+	ou.organisation_id = $1;
 
 -- name: AddUserToOrganisation :exec
 INSERT INTO apollo.organisation_users (user_id, organisation_id)
