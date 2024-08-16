@@ -10,6 +10,12 @@ SELECT
 FROM
     apollo.permissions;
 
+-- name: ListPermissionGroups :many
+SELECT
+    permissiongroups.*
+FROM
+    apollo.permissiongroups;
+
 -- name: ListPermissionGroupsForUser :many
 SELECT
     pg.*
@@ -72,3 +78,7 @@ WHERE
 -- name: AddUserToPermissionGroup :exec
 INSERT INTO apollo.user_permissiongroup_membership (group_id, user_id)
     VALUES ($1, $2);
+
+-- name: DeletePermissionGroup :exec
+DELETE FROM apollo.permissiongroups
+WHERE permissiongroups.id = $1;

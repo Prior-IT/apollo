@@ -75,6 +75,16 @@ func (q *Queries) CreatePermissionGroupWithID(ctx context.Context, iD int32, nam
 	return i, err
 }
 
+const deletePermissionGroup = `-- name: DeletePermissionGroup :exec
+DELETE FROM apollo.permissiongroups
+WHERE permissiongroups.id = $1
+`
+
+func (q *Queries) DeletePermissionGroup(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deletePermissionGroup, id)
+	return err
+}
+
 const getPermissionGroup = `-- name: GetPermissionGroup :one
 SELECT
     pg.id, pg.name
@@ -116,6 +126,33 @@ func (q *Queries) GetPermissionsForGroup(ctx context.Context, groupID int32) ([]
 	for rows.Next() {
 		var i GetPermissionsForGroupRow
 		if err := rows.Scan(&i.Permission, &i.Enabled); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPermissionGroups = `-- name: ListPermissionGroups :many
+SELECT
+    permissiongroups.id, permissiongroups.name
+FROM
+    apollo.permissiongroups
+`
+
+func (q *Queries) ListPermissionGroups(ctx context.Context) ([]ApolloPermissiongroup, error) {
+	rows, err := q.db.Query(ctx, listPermissionGroups)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ApolloPermissiongroup
+	for rows.Next() {
+		var i ApolloPermissiongroup
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

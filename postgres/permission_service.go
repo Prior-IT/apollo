@@ -103,6 +103,26 @@ func (p *PermissionService) CreatePermissionGroup(
 // ListPermissionGroups implements permissions.Service.
 func (p *PermissionService) ListPermissionGroups(
 	ctx context.Context,
+) ([]permissions.PermissionGroup, error) {
+	groups, err := p.q.ListPermissionGroups(ctx)
+	if err != nil {
+		return nil, err
+	}
+	list := make([]permissions.PermissionGroup, 0)
+	for _, g := range groups {
+		perms, err := p.q.GetPermissionsForGroup(ctx, g.ID)
+		if err != nil {
+			return nil, err
+		}
+		group := combinePermissionGroup(g, perms)
+		list = append(list, group)
+	}
+	return list, nil
+}
+
+// ListPermissionGroupsForUser implements permissions.Service.
+func (p *PermissionService) ListPermissionGroupsForUser(
+	ctx context.Context,
 	UserID core.UserID,
 ) ([]permissions.PermissionGroup, error) {
 	groups, err := p.q.ListPermissionGroupsForUser(ctx, int32(UserID))
@@ -158,7 +178,7 @@ func (p *PermissionService) HasAny(
 	UserID core.UserID,
 	permission permissions.Permission,
 ) (bool, error) {
-	groups, err := p.ListPermissionGroups(ctx, UserID)
+	groups, err := p.ListPermissionGroupsForUser(ctx, UserID)
 	if err != nil {
 		return false, err
 	}
@@ -211,6 +231,11 @@ func (p *PermissionService) UpdatePermissionGroup(
 	return nil
 }
 
+// DeletePermissionGroup implements permissions.Service.
+func (p *PermissionService) DeletePermissionGroup(ctx context.Context, GroupID int) error {
+	return p.q.DeletePermissionGroup(ctx, int32(GroupID))
+}
+
 // AddUserToPermissionGroup implements permissions.Service.
 func (p *PermissionService) AddUserToPermissionGroup(
 	ctx context.Context,
@@ -225,7 +250,7 @@ func (p *PermissionService) GetUserPermissions(
 	ctx context.Context,
 	UserID core.UserID,
 ) (map[permissions.Permission]bool, error) {
-	groups, err := p.ListPermissionGroups(ctx, UserID)
+	groups, err := p.ListPermissionGroupsForUser(ctx, UserID)
 	if err != nil {
 		return nil, err
 	}

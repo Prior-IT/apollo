@@ -15,6 +15,8 @@ func TestPermissionService(t *testing.T) {
 	db := tests.DB()
 	service := postgres.NewPermissionService(db)
 	userService := postgres.NewUserService(db)
+	defer tests.DeleteAllPermissions(service)
+	defer tests.DeleteAllUsers(userService)
 
 	err := permissions.RegisterApolloPermissions(service)
 	if err != nil {
@@ -22,7 +24,7 @@ func TestPermissionService(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	t.Run("ok - user without group", func(t *testing.T) {
+	t.Run("ok: user without group", func(t *testing.T) {
 		user := tests.CreateRegularUser(userService)
 		perms, err := service.GetUserPermissions(ctx, user.ID)
 		tests.Check(err)
@@ -31,7 +33,7 @@ func TestPermissionService(t *testing.T) {
 		assert.Empty(t, perms, "User without any groups should not have any permissions")
 	})
 
-	t.Run("ok - empty permission group", func(t *testing.T) {
+	t.Run("ok: empty permission group", func(t *testing.T) {
 		group, err := service.CreatePermissionGroup(ctx, &permissions.PermissionGroup{
 			Name:        "test",
 			Permissions: nil,
@@ -51,7 +53,7 @@ func TestPermissionService(t *testing.T) {
 		}
 	})
 
-	t.Run("ok - combined permission groups", func(t *testing.T) {
+	t.Run("ok: combined permission groups", func(t *testing.T) {
 		// Test data
 		user := tests.CreateRegularUser(userService)
 		group1, err := service.CreatePermissionGroup(ctx, &permissions.PermissionGroup{
