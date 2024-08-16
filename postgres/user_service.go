@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
 	"github.com/prior-it/apollo/core"
 	"github.com/prior-it/apollo/postgres/internal/sqlc"
@@ -25,9 +26,12 @@ func (u *UserService) CreateUser(
 	ctx context.Context,
 	data core.UserCreateData,
 ) (*core.User, error) {
+	if data.Email == nil {
+		return nil, errors.New("email cannot be nil")
+	}
 	user, err := u.q.CreateUser(ctx, data.Name, data.Email.String())
 	if err != nil {
-		return nil, err
+		return nil, convertPgError(err)
 	}
 	return convertUser(user)
 }
@@ -41,7 +45,7 @@ func (u *UserService) DeleteUser(ctx context.Context, id core.UserID) error {
 func (u *UserService) GetAmountOfUsers(ctx context.Context) (uint64, error) {
 	amount, err := u.q.GetAmountOfUsers(ctx)
 	if err != nil {
-		return 0, err
+		return 0, convertPgError(err)
 	}
 	return uint64(amount), nil
 }
@@ -50,7 +54,7 @@ func (u *UserService) GetAmountOfUsers(ctx context.Context) (uint64, error) {
 func (u *UserService) GetUser(ctx context.Context, id core.UserID) (*core.User, error) {
 	user, err := u.q.GetUser(ctx, int32(id))
 	if err != nil {
-		return nil, err
+		return nil, convertPgError(err)
 	}
 	return convertUser(user)
 }
@@ -59,7 +63,7 @@ func (u *UserService) GetUser(ctx context.Context, id core.UserID) (*core.User, 
 func (u *UserService) ListUsers(ctx context.Context) ([]*core.User, error) {
 	users, err := u.q.ListUsers(ctx)
 	if err != nil {
-		return nil, err
+		return nil, convertPgError(err)
 	}
 	return convertUserList(users)
 }
