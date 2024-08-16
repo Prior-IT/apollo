@@ -29,7 +29,7 @@ type ApolloOrganisation struct {
 }
 
 type ApolloOrganisationUser struct {
-	ID             *int32
+	ID             int32
 	UserID         int32
 	OrganisationID int32
 }

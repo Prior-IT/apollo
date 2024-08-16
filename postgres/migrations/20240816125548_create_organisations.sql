@@ -6,10 +6,10 @@ CREATE TABLE IF NOT EXISTS apollo.organisations (
 );
 
 CREATE TABLE IF NOT EXISTS apollo.organisation_users (
-	id serial,
+	id serial PRIMARY KEY,
 	user_id serial NOT NULL REFERENCES apollo.users(id) ON DELETE CASCADE,
 	organisation_id serial NOT NULL REFERENCES apollo.organisations(id) ON DELETE CASCADE,
-	PRIMARY KEY (user_id, organisation_id)
+	UNIQUE (user_id, organisation_id)
 );
 -- +goose StatementEnd
 
