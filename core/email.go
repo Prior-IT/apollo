@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/mail"
+	"strings"
 )
 
 type EmailAddress interface {
@@ -25,6 +26,7 @@ func NewEmailAddress(address string) (EmailAddress, error) {
 	if len(address) == 0 {
 		return nil, errors.New("e-mail address cannot be empty")
 	}
+	address = strings.ToLower(address)
 	_, err := mail.ParseAddress(address)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse e-mail address %q: %w", address, err)

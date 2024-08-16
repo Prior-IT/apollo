@@ -9,6 +9,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/joho/godotenv"
 	"github.com/prior-it/apollo/core"
+	"github.com/prior-it/apollo/permissions"
 	"github.com/prior-it/apollo/postgres"
 )
 
@@ -34,6 +35,24 @@ func DB() *postgres.ApolloDB {
 	}
 
 	return db
+}
+
+func DeleteAllUsers(service core.UserService) {
+	ctx := context.Background()
+	users, err := service.ListUsers(ctx)
+	Check(err)
+	for _, user := range users {
+		Check(service.DeleteUser(ctx, user.ID))
+	}
+}
+
+func DeleteAllPermissions(service permissions.Service) {
+	ctx := context.Background()
+	groups, err := service.ListPermissionGroups(ctx)
+	Check(err)
+	for _, group := range groups {
+		Check(service.DeletePermissionGroup(ctx, group.ID))
+	}
 }
 
 func CreateRegularUser(service core.UserService) *core.User {
