@@ -23,6 +23,16 @@ type ApolloAccountCache struct {
 	Created    pgtype.Timestamptz
 }
 
+type ApolloOrganisation struct {
+	ID   int32
+	Name string
+}
+
+type ApolloOrganisationUser struct {
+	UserID         int32
+	OrganisationID int32
+}
+
 type ApolloPermission struct {
 	Name string
 }
