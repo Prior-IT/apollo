@@ -1,0 +1,58 @@
+package tests
+
+import (
+	"context"
+	"log"
+	"math/rand/v2"
+	"os"
+
+	"github.com/brianvoe/gofakeit/v7"
+	"github.com/joho/godotenv"
+	"github.com/prior-it/apollo/core"
+	"github.com/prior-it/apollo/postgres"
+)
+
+var Faker = gofakeit.New(rand.Uint64())
+
+func DB() *postgres.ApolloDB {
+	ctx := context.Background()
+	err := godotenv.Load("../.env")
+	if err != nil {
+		log.Printf("Could not load the .env file: %v", err)
+	}
+	url := os.Getenv("DATABASE_URL")
+	db, err := postgres.NewDB(ctx, url)
+	if err != nil {
+		panic(
+			"To test database functionality, set the DATABASE_URL env variable to a valid database",
+		)
+	}
+
+	err = db.MigrateApollo(ctx)
+	if err != nil {
+		log.Panicf("Cannot migrate apollo db: %v", err)
+	}
+
+	return db
+}
+
+func CreateRegularUser(service core.UserService) *core.User {
+	email, err := core.NewEmailAddress(Faker.Email())
+	if err != nil {
+		log.Fatal(err)
+	}
+	user, err := service.CreateUser(context.Background(), core.UserCreateData{
+		Name:  Faker.Name(),
+		Email: email,
+	})
+	if err != nil {
+		log.Fatalf("cannot create regular user: %v", err)
+	}
+	return user
+}
+
+func Check(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
