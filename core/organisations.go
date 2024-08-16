@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -45,4 +46,31 @@ func ParseOrganisationID(id string) (OrganisationID, error) {
 		return 0, fmt.Errorf("cannot parse organisation id: %w", err)
 	}
 	return organisationID, nil
+}
+
+/**
+ * APPLICATION
+ */
+
+type OrganisationCreateData struct {
+	Name string
+}
+
+type OrganisationService interface {
+	// Create a new organisation with the specified data.
+	CreateOrganisation(ctx context.Context, data OrganisationCreateData) (*Organisation, error)
+	// Retrieve the organisation with the specified id or ErrOrganisationDoesNotExist if no such organisation exists.
+	GetOrganisation(ctx context.Context, id OrganisationID) (*Organisation, error)
+	// Retrieve all existing organisations.
+	ListOrganisations(ctx context.Context) ([]*Organisation, error)
+	// Retrieve the amount of existing organisations.
+	GetAmountOfOrganisations(ctx context.Context) (uint64, error)
+	// Delete the organisation with the specified id or ErrOrganisationDoesNotExist if no such organisation exists.
+	DeleteOrganisation(ctx context.Context, id OrganisationID) error
+	// List the organisations a user belongs to or ErrUserDoesNotExist if no such user exists
+	ListOrganisationsForUser(ctx context.Context, id UserID) ([]*Organisation, error)
+	// Add user to an existing organisation
+	AddUserToOrganisation(ctx context.Context, UserID UserID, OrgID OrganisationID) (*Organisation, error)
+	// Remove user from an organisation
+	RemoveUserFromOrganisation(ctx context.Context, UserID UserID, OrgID OrganisationID) (*Organisation, error)
 }
