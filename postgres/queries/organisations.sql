@@ -53,22 +53,8 @@ WHERE
 INSERT INTO apollo.organisation_users (user_id, organisation_id)
 	VALUES ($1, $2);
 
-SELECT
-	*
-FROM
-	apollo.organisations
-WHERE
-	id = $2;
-
 -- name: RemoveUserFromOrganisation :exec
 DELETE FROM
 	apollo.organisation_users
 WHERE
 	user_id = $1 AND organisation_id = $2;
-
-SELECT
-	*
-FROM
-	apollo.organisations
-WHERE
-	id = $2;
