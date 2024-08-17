@@ -73,3 +73,5 @@ setup:
   go mod download
   go mod verify
 
+vet:
+  go vet ./...
