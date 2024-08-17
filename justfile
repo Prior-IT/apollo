@@ -73,5 +73,6 @@ setup:
   go mod download
   go mod verify
 
+# Examine code for known issues
 vet:
   go vet ./...
