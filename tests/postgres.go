@@ -46,6 +46,15 @@ func DeleteAllUsers(service core.UserService) {
 	}
 }
 
+func DeleteAllOrganisations(service core.OrganisationService) {
+	ctx := context.Background()
+	organisations, err := service.ListOrganisations(ctx)
+	Check(err)
+	for _, organisation := range organisations {
+		Check(service.DeleteOrganisation(ctx, organisation.ID))
+	}
+}
+
 func DeleteAllPermissions(service permissions.Service) {
 	ctx := context.Background()
 	groups, err := service.ListPermissionGroups(ctx)
