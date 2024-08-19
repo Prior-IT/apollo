@@ -141,6 +141,28 @@ func (p *PermissionService) ListPermissionGroupsForUser(
 	return list, nil
 }
 
+// ListPermissionGroupsForUserForOrganisation implements permissions.Service.
+func (p *PermissionService) ListPermissionGroupsForUserForOrganisation(
+	ctx context.Context,
+	UserID core.UserID,
+	OrgID core.OrganisationID,
+) ([]permissions.PermissionGroup, error) {
+	groups, err := p.q.ListPermissionGroupsForUserForOrganisation(ctx, int32(UserID), int32(OrgID))
+	if err != nil {
+		return nil, err
+	}
+	list := make([]permissions.PermissionGroup, 0)
+	for _, g := range groups {
+		perms, err := p.q.GetPermissionsForGroup(ctx, g.ID)
+		if err != nil {
+			return nil, err
+		}
+		group := combinePermissionGroup(g, perms)
+		list = append(list, group)
+	}
+	return list, nil
+}
+
 // GetPermissionGroup implements permissions.Service.
 func (p *PermissionService) GetPermissionGroup(
 	ctx context.Context,
@@ -179,6 +201,25 @@ func (p *PermissionService) HasAny(
 	permission permissions.Permission,
 ) (bool, error) {
 	groups, err := p.ListPermissionGroupsForUser(ctx, UserID)
+	if err != nil {
+		return false, err
+	}
+	for _, g := range groups {
+		if g.Get(permission) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// HasAnyForOrg implements permissions.Service.
+func (p *PermissionService) HasAnyForOrg(
+	ctx context.Context,
+	UserID core.UserID,
+	OrgID core.OrganisationID,
+	permission permissions.Permission,
+) (bool, error) {
+	groups, err := p.ListPermissionGroupsForUserForOrganisation(ctx, UserID, OrgID)
 	if err != nil {
 		return false, err
 	}
@@ -248,12 +289,43 @@ func (p *PermissionService) AddUserToPermissionGroup(
 	return p.q.AddUserToPermissionGroup(ctx, int32(GroupID), int32(UserID))
 }
 
+// AddUserToPermissionGroup implements permissions.Service.
+func (p *PermissionService) AddUserToPermissionGroupForOrganisation(
+	ctx context.Context,
+	UserID core.UserID,
+	OrgID core.OrganisationID,
+	GroupID permissions.PermissionGroupID,
+) error {
+	params := sqlc.AddUserToPermissionGroupForOrganisationParams{PermissionGroupID: int32(GroupID), UserID: int32(UserID), OrganisationID: int32(OrgID)}
+	return p.q.AddUserToPermissionGroupForOrganisation(ctx, params)
+}
+
 // GetUserPermissions implements permissions.Service.
 func (p *PermissionService) GetUserPermissions(
 	ctx context.Context,
 	UserID core.UserID,
 ) (map[permissions.Permission]bool, error) {
 	groups, err := p.ListPermissionGroupsForUser(ctx, UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	combined := make(map[permissions.Permission]bool)
+	for _, group := range groups {
+		for perm, enabled := range group.Permissions {
+			combined[perm] = combined[perm] || enabled
+		}
+	}
+	return combined, nil
+}
+
+// GetUserPermissionsForOrganisation implements permissions.Service.
+func (p *PermissionService) GetUserPermissionsForOrganisation(
+	ctx context.Context,
+	UserID core.UserID,
+	OrgID core.OrganisationID,
+) (map[permissions.Permission]bool, error) {
+	groups, err := p.ListPermissionGroupsForUserForOrganisation(ctx, UserID, OrgID)
 	if err != nil {
 		return nil, err
 	}

@@ -34,6 +34,11 @@ type ApolloOrganisationUser struct {
 	OrganisationID int32
 }
 
+type ApolloOrganisationUsersPermissiongroup struct {
+	OrganisationUsersID int32
+	PermissionGroupID   int32
+}
+
 type ApolloPermission struct {
 	Name string
 }

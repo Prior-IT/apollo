@@ -19,6 +19,22 @@ func (q *Queries) AddUserToPermissionGroup(ctx context.Context, groupID int32, u
 	return err
 }
 
+const addUserToPermissionGroupForOrganisation = `-- name: AddUserToPermissionGroupForOrganisation :exec
+INSERT INTO apollo.organisation_users_permissiongroups (permission_group_id, organisation_users_id)
+    VALUES ($1, (SELECT id FROM apollo.organisation_users WHERE user_id = $2 AND organisation_id = $3))
+`
+
+type AddUserToPermissionGroupForOrganisationParams struct {
+	PermissionGroupID int32
+	UserID            int32
+	OrganisationID    int32
+}
+
+func (q *Queries) AddUserToPermissionGroupForOrganisation(ctx context.Context, arg AddUserToPermissionGroupForOrganisationParams) error {
+	_, err := q.db.Exec(ctx, addUserToPermissionGroupForOrganisation, arg.PermissionGroupID, arg.UserID, arg.OrganisationID)
+	return err
+}
+
 const createPermission = `-- name: CreatePermission :exec
 INSERT INTO apollo.permissions (name)
     VALUES ($1)
@@ -175,6 +191,36 @@ WHERE
 
 func (q *Queries) ListPermissionGroupsForUser(ctx context.Context, userID int32) ([]ApolloPermissiongroup, error) {
 	rows, err := q.db.Query(ctx, listPermissionGroupsForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ApolloPermissiongroup
+	for rows.Next() {
+		var i ApolloPermissiongroup
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPermissionGroupsForUserForOrganisation = `-- name: ListPermissionGroupsForUserForOrganisation :many
+SELECT
+    pg.id, pg.name
+FROM
+    apollo.permissiongroups pg
+    INNER JOIN apollo.organisation_users_permissiongroups org_usr ON org_usr.permission_group_id = pg.id
+WHERE
+    org_usr.organisation_users_id = (SELECT id FROM apollo.organisation_users WHERE user_id = $1 AND organisation_id = $2)
+`
+
+func (q *Queries) ListPermissionGroupsForUserForOrganisation(ctx context.Context, userID int32, organisationID int32) ([]ApolloPermissiongroup, error) {
+	rows, err := q.db.Query(ctx, listPermissionGroupsForUserForOrganisation, userID, organisationID)
 	if err != nil {
 		return nil, err
 	}
