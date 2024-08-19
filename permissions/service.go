@@ -43,4 +43,21 @@ type Service interface {
 		ctx context.Context,
 		UserID core.UserID,
 	) (map[Permission]bool, error)
+	// Lists all permission groups for the specified user in the specified organisation
+	ListPermissionGroupsForUserForOrganisation(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) ([]PermissionGroup, error)
+	// Add an existing user to an existing permission group in the specified organisation
+	AddUserToPermissionGroupForOrganisation(
+		ctx context.Context,
+		UserID core.UserID,
+		OrgID core.OrganisationID,
+		GroupID PermissionGroupID,
+	) error
+	// Return the combined permissions for the specified user in the specified organisation.
+	// If a user has multiple permission groups, the combined permission group will contain all permissions that are
+	// enabled in at least one of their permission groups.
+	GetUserPermissionsForOrganisation(
+		ctx context.Context,
+		UserID core.UserID,
+		OrgID core.OrganisationID,
+	) (map[Permission]bool, error)
 }
