@@ -25,6 +25,15 @@ FROM
 WHERE
     usr.user_id = $1;
 
+-- name: ListPermissionGroupsForUserForOrganisation :many
+SELECT
+    pg.*
+FROM
+    apollo.permissiongroups pg
+    INNER JOIN apollo.organisation_users_permissiongroups org_usr ON org_usr.permission_group_id = pg.id
+WHERE
+    org_usr.organisation_users_id = (SELECT id FROM apollo.organisation_users WHERE user_id = $1 AND organisation_id = $2);
+
 -- name: GetPermissionsForGroup :many
 SELECT
     p.name AS permission,
@@ -78,6 +87,10 @@ WHERE
 -- name: AddUserToPermissionGroup :exec
 INSERT INTO apollo.user_permissiongroup_membership (group_id, user_id)
     VALUES ($1, $2);
+
+-- name: AddUserToPermissionGroupForOrganisation :exec
+INSERT INTO apollo.organisation_users_permissiongroups (permission_group_id, organisation_users_id)
+    VALUES ($1, (SELECT id FROM apollo.organisation_users WHERE user_id = $2 AND organisation_id = $3));
 
 -- name: DeletePermissionGroup :exec
 DELETE FROM apollo.permissiongroups
