@@ -74,6 +74,27 @@ func (db *ApolloDB) Migrate(folder embed.FS) error {
 	return nil
 }
 
+// Migrate the database down a single migration using the specified embedded migration folder.
+func (db *ApolloDB) MigrateDown(folder embed.FS) error {
+	goose.SetBaseFS(folder)
+
+	if err := goose.SetDialect("postgres"); err != nil {
+		return fmt.Errorf("cannot change dialect to postgres: %w", err)
+	}
+
+	database := stdlib.OpenDBFromPool(db.Pool)
+
+	if err := goose.Down(database, "migrations"); err != nil {
+		return fmt.Errorf("cannot run database migrations: %w", err)
+	}
+
+	if err := database.Close(); err != nil {
+		return fmt.Errorf("cannot close database connection: %w", err)
+	}
+
+	return nil
+}
+
 // Migrate the Apollo models in the database, if required.
 // Note: this will always return the db connection back to the "public" schema,
 // use [SwitchSchema] afterwards if you don't want this.
@@ -83,6 +104,24 @@ func (db *ApolloDB) MigrateApollo(ctx context.Context) error {
 	}
 
 	if err := db.Migrate(migrations); err != nil {
+		return fmt.Errorf("cannot run apollo migrations: %w", err)
+	}
+
+	if err := db.SwitchSchema(ctx, "public"); err != nil {
+		return fmt.Errorf("cannot switch back to the public schema: %w", err)
+	}
+	return nil
+}
+
+// Migrate the Apollo models down a single migration in the database
+// Note: this will always return the db connection back to the "public" schema,
+// use [SwitchSchema] afterwards if you don't want this.
+func (db *ApolloDB) MigrateApolloDown(ctx context.Context) error {
+	if err := db.SwitchSchema(ctx, "apollo"); err != nil {
+		return fmt.Errorf("cannot switch to the apollo schema: %w", err)
+	}
+
+	if err := db.MigrateDown(migrations); err != nil {
 		return fmt.Errorf("cannot run apollo migrations: %w", err)
 	}
 
