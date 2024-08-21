@@ -26,6 +26,8 @@ type Service interface {
 	RenamePermissionGroup(ctx context.Context, ID PermissionGroupID, Name string) error
 	// Returns whether or not the specified user has the specified permission in any of its permission groups.
 	HasAny(ctx context.Context, UserID core.UserID, permission Permission) (bool, error)
+	// Returns whether or not the specified user has the specified permission in any of its permission groups for the specified organisation.
+	HasAnyForOrg(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID, permission Permission) (bool, error)
 	// Lists all permission groups in the system
 	ListPermissionGroups(ctx context.Context) ([]PermissionGroup, error)
 	// Lists all permission groups for the specified user
