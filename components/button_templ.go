@@ -18,7 +18,7 @@ const (
 var buttonTypeClass = map[buttonType]string{
 	ButtonType_Primary:   "bg-primary-light enabled:hover:bg-primary text-white shadow-primary-dark/60",
 	ButtonType_Secondary: "bg-secondary enabled:hover:bg-secondary-dark text-white shadow-secondary-dark/60",
-	ButtonType_Outline:   "border border-slate-600 text-slate-800 enabled:hover:bg-slate-200/50 shadow-slate-800/40",
+	ButtonType_Outline:   "border border-slate-400 text-body enabled:hover:bg-slate-200/50 shadow-slate-600/40",
 }
 
 type htmlType int
