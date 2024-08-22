@@ -19,8 +19,8 @@ Or run `just test -run Users ./...` (and the same for devtest) to only run tests
 - [x] Core
 - [x] Postgres core
 - [x] OAuth login
-- [ ] Organisations
-- [ ] Permissions
+- [x] Organisations
+- [x] Permissions
 - [ ] EntraID login
 - [ ] Magic e-mail login
 - [ ] Move account cache to a separate service (so you can use redis for caching while still storing accounts in postgres)

@@ -8,10 +8,6 @@ on:
     branches:
       main
 
-permissions:
-  contents: read
-  checks: write # Add checks to PR
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -58,6 +54,9 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write # Add checks to PR
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -70,3 +69,43 @@ jobs:
       with:
         version: latest
         args: --timeout 3m
+
+  format:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+      - name: Format code
+        run: gofmt -s -w .
+      - name: Commit changes (if any)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Update formatting
+          skip_fetch: true
+          skip_checkout: true
+
+  tidy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+      - name: Tidy dependencies
+        run: go mod tidy
+      - name: Commit changes (if any)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Update dependencies
+          skip_fetch: true
+          skip_checkout: true
