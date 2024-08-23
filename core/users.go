@@ -56,6 +56,11 @@ func ParseUserID(id string) (UserID, error) {
  * APPLICATION
  */
 
+type UserUpdate struct {
+	Name  *string
+	Email *string
+}
+
 type UserService interface {
 	// Create a new user with the specified data.
 	CreateUser(ctx context.Context, name string, email EmailAddress) (*User, error)
@@ -69,4 +74,6 @@ type UserService interface {
 	DeleteUser(ctx context.Context, id UserID) error
 	// Update the user's admin state to the specified state.
 	UpdateUserAdmin(ctx context.Context, id UserID, admin bool) error
+	// Update the user with the specified data.
+	UpdateUser(ctx context.Context, id UserID, data UserUpdate) (*User, error)
 }

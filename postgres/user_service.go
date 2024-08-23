@@ -74,6 +74,23 @@ func (u *UserService) UpdateUserAdmin(ctx context.Context, id core.UserID, admin
 	return u.q.UpdateUserAdmin(ctx, int32(id), admin)
 }
 
+// UpdateUser implements core.UserService.
+func (u *UserService) UpdateUser(
+	ctx context.Context,
+	id core.UserID,
+	data core.UserUpdate,
+) (*core.User, error) {
+	dbUser, err := u.q.UpdateUser(ctx, sqlc.UpdateUserParams{
+		ID:    int32(id),
+		Name:  data.Name,
+		Email: data.Email,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return convertUser(dbUser)
+}
+
 func convertUser(user sqlc.ApolloUser) (*core.User, error) {
 	email, err := core.NewEmailAddress(user.Email)
 	if err != nil {
