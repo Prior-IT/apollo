@@ -21,16 +21,25 @@ var (
 type VatNumber interface {
 	// String returns the string representation for this vat number
 	String() string
+	// Display returns a formatted string representation for this vat number
+	Display() string
 }
 
-// A VAT number containing the land code and the numeric part
+// A VAT number containing the land code and the remaining part
 type vatNumber struct {
 	countryIso2 string
 	vatString   string
 }
 
 func (vat vatNumber) String() string {
-	return vat.vatString
+	return vat.countryIso2 + vat.vatString
+}
+
+func (vat vatNumber) Display() string {
+	if vat.countryIso2 == countries.BE.Alpha2() && len(vat.vatString) == 10 {
+		return fmt.Sprintf("%s %s.%s.%s", vat.countryIso2, vat.vatString[0:4], vat.vatString[4:7], vat.vatString[7:])
+	}
+	return vat.String()
 }
 
 // Verifies if the format is valid for a Belgian vat number according to the checksum
