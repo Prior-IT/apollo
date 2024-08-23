@@ -61,9 +61,9 @@ func checkVatValid(cleanedVat string, countryIso2 string) error {
 	if err != nil {
 		return err
 	}
-	checksum, err2 := strconv.Atoi(cleanedVat[8:10])
-	if err2 != nil {
-		return err2
+	checksum, err := strconv.Atoi(cleanedVat[8:10])
+	if err != nil {
+		return err
 	}
 	calcValue := primeDivider - (firstPart - (firstPart/primeDivider)*primeDivider)
 	if calcValue != checksum {
