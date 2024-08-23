@@ -26,6 +26,22 @@ func generateValidBelgianVAT(startWithOne bool) string {
 	return fmt.Sprintf("BE%s%02d", base, checksum)
 }
 
+func FuzzVatNumber(f *testing.F) {
+	for _, seed := range []string{generateValidBelgianVAT(true), generateValidBelgianVAT(false), "BE 156", "XX ", "BE..2", ".BE.00", "hello world"} {
+		f.Add(seed)
+	}
+	f.Fuzz(func(t *testing.T, value string) {
+		vat, err := core.NewVatNumber(value)
+		// We're not looking for valid vat here but rather for unexpected errors leading to a panic
+		if err != nil {
+			assert.Nil(t, vat, "If there is an error, there should not be a vat number")
+		}
+		if vat != nil {
+			assert.Nil(t, err, "If there is a vat, there should be no error")
+		}
+	})
+}
+
 func TestVAT(t *testing.T) {
 	t.Run("ok: valid belgian VAT starting with 0, case insensitive", func(t *testing.T) {
 		value := generateValidBelgianVAT(false)
