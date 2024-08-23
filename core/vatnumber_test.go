@@ -29,10 +29,10 @@ func generateValidVAT(startWithOne bool) string {
 func TestVAT(t *testing.T) {
 	t.Run("ok: valid belgian VAT starting with 0, case insensitive", func(t *testing.T) {
 		value := generateValidVAT(false)
-		vat1, err := core.NewBelgianVatNumber(value)
+		vat1, err := core.NewVatNumber(value)
 		assert.Nil(t, err)
 
-		vat2, err := core.NewBelgianVatNumber(strings.ToLower(value))
+		vat2, err := core.NewVatNumber(strings.ToLower(value))
 		assert.Nil(t, err)
 
 		assert.Equal(t, vat1, vat2)
@@ -40,10 +40,10 @@ func TestVAT(t *testing.T) {
 
 	t.Run("ok: valid belgian VAT starting with 1, case insensitive", func(t *testing.T) {
 		value := generateValidVAT(true)
-		vat1, err := core.NewBelgianVatNumber(value)
+		vat1, err := core.NewVatNumber(value)
 		assert.Nil(t, err)
 
-		vat2, err := core.NewBelgianVatNumber(strings.ToLower(value))
+		vat2, err := core.NewVatNumber(strings.ToLower(value))
 		assert.Nil(t, err)
 
 		assert.Equal(t, vat1, vat2)
@@ -51,31 +51,37 @@ func TestVAT(t *testing.T) {
 
 	t.Run("ok: valid belgian VAT starting with 0 without BE", func(t *testing.T) {
 		value := generateValidVAT(false)
-		_, err := core.NewBelgianVatNumber(value[2:])
+		_, err := core.NewVatNumber(value[2:])
 		assert.Nil(t, err)
 	})
 
 	t.Run("ok: valid belgian VAT starting with 1 without BE", func(t *testing.T) {
 		value := generateValidVAT(true)
-		_, err := core.NewBelgianVatNumber(value[2:])
+		_, err := core.NewVatNumber(value[2:])
 		assert.Nil(t, err)
 	})
 
-	t.Run("nok: invalid belgian VAT - starting with BE2", func(t *testing.T) {
+	t.Run("err: invalid belgian VAT - starting with BE2", func(t *testing.T) {
 		value := generateValidVAT(false)
-		_, err := core.NewBelgianVatNumber("BE2" + value[3:])
+		_, err := core.NewVatNumber("BE2" + value[3:])
 		assert.NotNil(t, err)
 	})
 
-	t.Run("nok: invalid VAT - starting with NL", func(t *testing.T) {
+	t.Run("err: invalid VAT - unsupported country", func(t *testing.T) {
 		value := generateValidVAT(false)
-		_, err := core.NewBelgianVatNumber("NL" + value[2:])
-		assert.NotNil(t, err)
+		_, err := core.NewVatNumber("NL" + value[2:])
+		assert.ErrorIs(t, err, core.ErrVatCountryNotSupported)
 	})
 
-	t.Run("nok: invalid VAT (too short)", func(t *testing.T) {
+	t.Run("err: invalid VAT - non-iso characters", func(t *testing.T) {
 		value := generateValidVAT(false)
-		_, err := core.NewBelgianVatNumber(value[:6])
+		_, err := core.NewVatNumber("XY" + value[2:])
+		assert.ErrorIs(t, err, core.ErrVatInvalidCode)
+	})
+
+	t.Run("err: invalid VAT (too short)", func(t *testing.T) {
+		value := generateValidVAT(false)
+		_, err := core.NewVatNumber(value[:6])
 		assert.NotNil(t, err)
 	})
 }
