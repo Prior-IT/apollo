@@ -56,7 +56,7 @@ func TestVAT(t *testing.T) {
 
 	t.Run("ok: valid belgian VAT with non-alphanumeric chars", func(t *testing.T) {
 		value := generateValidBelgianVAT(false)
-		nonAlphaNumericChars := "! @# $%^ &*()_-=+[]{}|"
+		nonAlphaNumericChars := "! @# .$%^ &*()_-=+[]{}|"
 		var sb strings.Builder
 		maxL := max(len(value), len(nonAlphaNumericChars))
 

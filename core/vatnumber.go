@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	SupportedCountryIso2Codes = []string{countries.BE.Alpha2()}
+	SupportedCountryIso2Codes = []string{"BE"}
 	ErrVatCountryNotSupported = errors.New("VAT numbers for this country are not supported (yet)")
 	ErrVatInvalidCode         = errors.New("The VAT number doesn't start with a valid code")
 )
@@ -73,7 +73,7 @@ func checkVatValid(cleanedVat string, countryIso2 string) error {
 	return nil
 }
 
-// NewBelgianVATNumber parses a vat number from any string.
+// NewVatNumber parses a vat number from any string.
 func NewVatNumber(vat string) (VatNumber, error) {
 	notAlphaNumericReg, err := regexp.Compile(`[^0-9a-zA-Z]`)
 	if err != nil {
