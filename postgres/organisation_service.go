@@ -96,7 +96,12 @@ func (o *OrganisationService) ListOrganisationsForUser(ctx context.Context, id c
 
 // AddUserToOrganisation implements core.OrganisationService.AddUserToOrganisation
 func (o *OrganisationService) AddUserToOrganisation(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) error {
-	return o.q.AddUserToOrganisation(ctx, int32(UserID), int32(OrgID))
+	return o.AddUser(ctx, o.db, UserID, OrgID)
+}
+
+func (o *OrganisationService) AddUser(ctx context.Context, dbtx sqlc.DBTX, UserID core.UserID, OrgID core.OrganisationID) error {
+	queries := sqlc.New(dbtx)
+	return queries.AddUserToOrganisation(ctx, int32(UserID), int32(OrgID))
 }
 
 // RemoveUserFromOrganisation implements core.OrganisationService.RemoveUserFromOrganisation
