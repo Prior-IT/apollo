@@ -30,17 +30,21 @@ type Apollo struct {
 // Populate populates the Apollo object with fields that need to be retrieved after initialisation.
 // E.g. fields that are stored in the active session.
 func (apollo *Apollo) populate() {
-	User, err := apollo.retrieveUser()
-	if err == core.ErrUnauthenticated {
-		apollo.User = nil
-	} else if err != nil {
-		slog.Error("Could not retrieve user object from session", "error", err)
-	} else {
-		apollo.User = User
+	if apollo.store != nil {
+		User, err := apollo.retrieveUser()
+		if err == core.ErrUnauthenticated {
+			apollo.User = nil
+		} else if err != nil {
+			slog.Error("Could not retrieve user object from session", "error", err)
+		} else {
+			apollo.User = User
+		}
 	}
-	err = permissions.RegisterApolloPermissions(apollo.permissions)
-	if err != nil {
-		slog.Error("Could not register Apollo permissions", "error", err)
+	if apollo.permissions != nil {
+		err := permissions.RegisterApolloPermissions(apollo.permissions)
+		if err != nil {
+			slog.Error("Could not register Apollo permissions", "error", err)
+		}
 	}
 }
 
