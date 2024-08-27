@@ -38,3 +38,14 @@ SET
     admin = $2
 WHERE
     id = $1;
+
+-- name: UpdateUser :one
+UPDATE
+    apollo.users
+SET
+    name = COALESCE(sqlc.narg(name), name),
+    email = COALESCE(sqlc.narg(email), email)
+WHERE
+    id = $1
+RETURNING
+    *;

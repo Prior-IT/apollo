@@ -111,6 +111,37 @@ func (q *Queries) ListUsers(ctx context.Context) ([]ApolloUser, error) {
 	return items, nil
 }
 
+const updateUser = `-- name: UpdateUser :one
+UPDATE
+    apollo.users
+SET
+    name = COALESCE($2, name),
+    email = COALESCE($3, email)
+WHERE
+    id = $1
+RETURNING
+    id, name, email, joined, admin
+`
+
+type UpdateUserParams struct {
+	ID    int32
+	Name  *string
+	Email *string
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (ApolloUser, error) {
+	row := q.db.QueryRow(ctx, updateUser, arg.ID, arg.Name, arg.Email)
+	var i ApolloUser
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Joined,
+		&i.Admin,
+	)
+	return i, err
+}
+
 const updateUserAdmin = `-- name: UpdateUserAdmin :exec
 UPDATE
     apollo.users

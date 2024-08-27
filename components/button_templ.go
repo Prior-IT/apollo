@@ -7,30 +7,30 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-type buttonType int
+type ButtonType int
 
 const (
-	ButtonType_Primary buttonType = iota
+	ButtonType_Primary ButtonType = iota
 	ButtonType_Secondary
 	ButtonType_Outline
 )
 
-var buttonTypeClass = map[buttonType]string{
+var buttonTypeClass = map[ButtonType]string{
 	ButtonType_Primary:   "bg-primary-light enabled:hover:bg-primary text-white shadow-primary-dark/60",
 	ButtonType_Secondary: "bg-secondary enabled:hover:bg-secondary-dark text-white shadow-secondary-dark/60",
 	ButtonType_Outline:   "border border-slate-400 text-body enabled:hover:bg-slate-200/50 shadow-slate-600/40",
 }
 
-type htmlType int
+type HtmlType int
 
 const (
-	HtmlType_Button htmlType = iota
+	HtmlType_Button HtmlType = iota
 	HtmlType_Submit
 	HtmlType_Reset
 	HtmlType_Menu
 )
 
-var htmlTypeToString = map[htmlType]string{
+var htmlTypeToString = map[HtmlType]string{
 	HtmlType_Button: "button",
 	HtmlType_Submit: "submit",
 	HtmlType_Reset:  "reset",
@@ -39,9 +39,9 @@ var htmlTypeToString = map[htmlType]string{
 
 type ButtonProps struct {
 	// The semantic button type, different types will have consistently different visual styles
-	Type buttonType
+	Type ButtonType
 	// The HTML button type
-	HtmlType htmlType
+	HtmlType HtmlType
 	// If set, clicking the button will trigger a htmx get request
 	HxGet string
 	// If set, the button will become a standalone, full-width button
