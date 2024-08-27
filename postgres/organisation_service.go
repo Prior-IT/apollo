@@ -10,23 +10,34 @@ import (
 
 func NewOrganisationService(DB *ApolloDB) *OrganisationService {
 	q := sqlc.New(DB)
-	return &OrganisationService{q}
+	return &OrganisationService{DB, q}
 }
 
 // Postgres implementation of the core OrganisationService interface.
 type OrganisationService struct {
-	q *sqlc.Queries
+	db *ApolloDB
+	q  *sqlc.Queries
 }
 
 // Force struct to implement the core interface
 var _ core.OrganisationService = &OrganisationService{}
 
 // CreateOrganisation implements core.OrganisationService.CreateOrganisation
-func (u *OrganisationService) CreateOrganisation(
+func (o *OrganisationService) CreateOrganisation(
 	ctx context.Context,
 	name string,
 ) (*core.Organisation, error) {
-	organisation, err := u.q.CreateOrganisation(ctx, name)
+	return o.AddOrganisation(ctx, o.db, name)
+}
+
+// Calls CreateOrganisation query using as a regular query or as a transaction
+func (o *OrganisationService) AddOrganisation(
+	ctx context.Context,
+	dbtx sqlc.DBTX,
+	name string,
+) (*core.Organisation, error) {
+	queries := sqlc.New(dbtx)
+	organisation, err := queries.CreateOrganisation(ctx, name)
 	if err != nil {
 		return nil, convertPgError(err)
 	}
@@ -34,13 +45,13 @@ func (u *OrganisationService) CreateOrganisation(
 }
 
 // DeleteOrganisation implements core.OrganisationService.DeleteOrganisation
-func (u *OrganisationService) DeleteOrganisation(ctx context.Context, id core.OrganisationID) error {
-	return u.q.DeleteOrganisation(ctx, int32(id))
+func (o *OrganisationService) DeleteOrganisation(ctx context.Context, id core.OrganisationID) error {
+	return o.q.DeleteOrganisation(ctx, int32(id))
 }
 
 // GetAmountOfOrganisations implements core.OrganisationService.GetAmountOfOrganisations
-func (u *OrganisationService) GetAmountOfOrganisations(ctx context.Context) (uint64, error) {
-	amount, err := u.q.GetAmountOfOrganisations(ctx)
+func (o *OrganisationService) GetAmountOfOrganisations(ctx context.Context) (uint64, error) {
+	amount, err := o.q.GetAmountOfOrganisations(ctx)
 	if err != nil {
 		return 0, convertPgError(err)
 	}
@@ -48,8 +59,8 @@ func (u *OrganisationService) GetAmountOfOrganisations(ctx context.Context) (uin
 }
 
 // GetOrganisation implements core.OrganisationService.GetOrganisation
-func (u *OrganisationService) GetOrganisation(ctx context.Context, id core.OrganisationID) (*core.Organisation, error) {
-	organisation, err := u.q.GetOrganisation(ctx, int32(id))
+func (o *OrganisationService) GetOrganisation(ctx context.Context, id core.OrganisationID) (*core.Organisation, error) {
+	organisation, err := o.q.GetOrganisation(ctx, int32(id))
 	if err != nil {
 		return nil, convertPgError(err)
 	}
@@ -57,8 +68,8 @@ func (u *OrganisationService) GetOrganisation(ctx context.Context, id core.Organ
 }
 
 // ListOrganisations implements core.OrganisationService.ListOrganisations
-func (u *OrganisationService) ListOrganisations(ctx context.Context) ([]core.Organisation, error) {
-	organisations, err := u.q.ListOrganisations(ctx)
+func (o *OrganisationService) ListOrganisations(ctx context.Context) ([]core.Organisation, error) {
+	organisations, err := o.q.ListOrganisations(ctx)
 	if err != nil {
 		return nil, convertPgError(err)
 	}
@@ -66,8 +77,8 @@ func (u *OrganisationService) ListOrganisations(ctx context.Context) ([]core.Org
 }
 
 // ListUsersInOrganisation implements core.OrganisationService.ListUsersInOrganisation
-func (u *OrganisationService) ListUsersInOrganisation(ctx context.Context, id core.OrganisationID) ([]core.User, error) {
-	users, err := u.q.ListUsersInOrganisation(ctx, int32(id))
+func (o *OrganisationService) ListUsersInOrganisation(ctx context.Context, id core.OrganisationID) ([]core.User, error) {
+	users, err := o.q.ListUsersInOrganisation(ctx, int32(id))
 	if err != nil {
 		return nil, convertPgError(err)
 	}
@@ -75,8 +86,8 @@ func (u *OrganisationService) ListUsersInOrganisation(ctx context.Context, id co
 }
 
 // ListOrganisationsForUser implements core.OrganisationService.ListOrganisationsForUser
-func (u *OrganisationService) ListOrganisationsForUser(ctx context.Context, id core.UserID) ([]core.Organisation, error) {
-	organisations, err := u.q.ListOrganisationsForUser(ctx, int32(id))
+func (o *OrganisationService) ListOrganisationsForUser(ctx context.Context, id core.UserID) ([]core.Organisation, error) {
+	organisations, err := o.q.ListOrganisationsForUser(ctx, int32(id))
 	if err != nil {
 		return nil, convertPgError(err)
 	}
@@ -84,13 +95,13 @@ func (u *OrganisationService) ListOrganisationsForUser(ctx context.Context, id c
 }
 
 // AddUserToOrganisation implements core.OrganisationService.AddUserToOrganisation
-func (u *OrganisationService) AddUserToOrganisation(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) error {
-	return u.q.AddUserToOrganisation(ctx, int32(UserID), int32(OrgID))
+func (o *OrganisationService) AddUserToOrganisation(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) error {
+	return o.q.AddUserToOrganisation(ctx, int32(UserID), int32(OrgID))
 }
 
 // RemoveUserFromOrganisation implements core.OrganisationService.RemoveUserFromOrganisation
-func (u *OrganisationService) RemoveUserFromOrganisation(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) error {
-	return u.q.RemoveUserFromOrganisation(ctx, int32(UserID), int32(OrgID))
+func (o *OrganisationService) RemoveUserFromOrganisation(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) error {
+	return o.q.RemoveUserFromOrganisation(ctx, int32(UserID), int32(OrgID))
 }
 
 func convertOrganisation(organisation sqlc.ApolloOrganisation) (*core.Organisation, error) {
@@ -107,14 +118,14 @@ func convertOrganisation(organisation sqlc.ApolloOrganisation) (*core.Organisati
 func convertOrganisationList(organisations []sqlc.ApolloOrganisation) ([]core.Organisation, error) {
 	list := make([]core.Organisation, len(organisations))
 	for i, v := range organisations {
-		u, err := convertOrganisation(v)
+		o, err := convertOrganisation(v)
 		if err != nil {
 			return nil, err
 		}
-		if u == nil {
+		if o == nil {
 			return nil, errors.New("both organisation and error should never be nil")
 		}
-		list[i] = *u
+		list[i] = *o
 	}
 	return list, nil
 }
