@@ -26,17 +26,9 @@ var _ core.OrganisationService = &OrganisationService{}
 func (o *OrganisationService) CreateOrganisation(
 	ctx context.Context,
 	name string,
+	parentID *core.OrganisationID,
 ) (*core.Organisation, error) {
-	return o.AddOrganisation(ctx, o.db, name, nil)
-}
-
-func (o *OrganisationService) CreateOrganisationWithParent(
-	ctx context.Context,
-	name string,
-	parent core.OrganisationID,
-) (*core.Organisation, error) {
-	intVal := int32(parent)
-	return o.AddOrganisation(ctx, o.db, name, &intVal)
+	return o.AddOrganisation(ctx, o.db, name, parentID)
 }
 
 // Calls CreateOrganisation query using as a regular query or as a transaction
@@ -44,10 +36,15 @@ func (o *OrganisationService) AddOrganisation(
 	ctx context.Context,
 	dbtx sqlc.DBTX,
 	name string,
-	parent *int32,
+	parentID *core.OrganisationID,
 ) (*core.Organisation, error) {
 	queries := sqlc.New(dbtx)
-	organisation, err := queries.CreateOrganisation(ctx, name, parent)
+	var castParentID *int32
+	if parentID != nil {
+		intID := int32(*parentID)
+		castParentID = &intID
+	}
+	organisation, err := queries.CreateOrganisation(ctx, name, castParentID)
 	if err != nil {
 		return nil, convertPgError(err)
 	}
@@ -125,8 +122,8 @@ func convertOrganisation(organisation sqlc.ApolloOrganisation) (*core.Organisati
 		return nil, err
 	}
 	var parentID *core.OrganisationID
-	if organisation.Parent != nil {
-		parentIDVal, err := core.NewOrganisationID(uint(*organisation.Parent))
+	if organisation.ParentID != nil {
+		parentIDVal, err := core.NewOrganisationID(uint(*organisation.ParentID))
 		if err != nil {
 			return nil, err
 		}

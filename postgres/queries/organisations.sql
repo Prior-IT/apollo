@@ -20,7 +20,7 @@ FROM
 	apollo.organisations;
 
 -- name: CreateOrganisation :one
-INSERT INTO apollo.organisations (name, parent)
+INSERT INTO apollo.organisations (name, parent_id)
 	VALUES ($1, $2)
 RETURNING
 	*;
