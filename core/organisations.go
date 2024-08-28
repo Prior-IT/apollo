@@ -12,8 +12,9 @@ import (
  */
 
 type Organisation struct {
-	ID   OrganisationID
-	Name string
+	ID       OrganisationID
+	Name     string
+	ParentID *OrganisationID
 }
 
 type (
@@ -55,6 +56,8 @@ func ParseOrganisationID(id string) (OrganisationID, error) {
 type OrganisationService interface {
 	// Create a new organisation with the specified data.
 	CreateOrganisation(ctx context.Context, name string) (*Organisation, error)
+	// Create a new organisation with the specified data.
+	CreateOrganisationWithParent(ctx context.Context, name string, parent OrganisationID) (*Organisation, error)
 	// Retrieve the organisation with the specified id or ErrOrganisationDoesNotExist if no such organisation exists.
 	GetOrganisation(ctx context.Context, id OrganisationID) (*Organisation, error)
 	// Retrieve all existing organisations.
