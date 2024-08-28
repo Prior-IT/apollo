@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -50,4 +51,23 @@ func ParseAddressID(id string) (AddressID, error) {
 		return 0, fmt.Errorf("cannot parse address id: %w", err)
 	}
 	return addressID, nil
+}
+
+/**
+ * APPLICATION
+ */
+
+type AddressCreateData struct {
+	Street     string
+	Number     uint
+	PostalCode uint
+	City       string
+	Country    string
+	ExtraLine  *string
+}
+
+type AddressService interface {
+	CreateAddress(ctx context.Context, address AddressCreateData) (*Address, error)
+	GetAddress(ctx context.Context, addressID AddressID) (*Address, error)
+	DeleteAddress(ctx context.Context, addressID AddressID) error
 }
