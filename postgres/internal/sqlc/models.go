@@ -24,8 +24,9 @@ type ApolloAccountCache struct {
 }
 
 type ApolloOrganisation struct {
-	ID   int32
-	Name string
+	ID     int32
+	Name   string
+	Parent *int32
 }
 
 type ApolloOrganisationUser struct {
