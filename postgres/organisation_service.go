@@ -94,18 +94,18 @@ func (o *OrganisationService) ListOrganisationsForUser(ctx context.Context, id c
 	return convertOrganisationList(organisations)
 }
 
-// AddUserToOrganisation implements core.OrganisationService.AddUserToOrganisation
-func (o *OrganisationService) AddUserToOrganisation(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) error {
-	return o.AddUser(ctx, o.db, UserID, OrgID)
+// AddUser implements core.OrganisationService.AddUser
+func (o *OrganisationService) AddUser(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) error {
+	return o.AddUserTx(ctx, o.db, UserID, OrgID)
 }
 
-func (o *OrganisationService) AddUser(ctx context.Context, dbtx sqlc.DBTX, UserID core.UserID, OrgID core.OrganisationID) error {
+func (o *OrganisationService) AddUserTx(ctx context.Context, dbtx sqlc.DBTX, UserID core.UserID, OrgID core.OrganisationID) error {
 	queries := sqlc.New(dbtx)
 	return queries.AddUserToOrganisation(ctx, int32(UserID), int32(OrgID))
 }
 
-// RemoveUserFromOrganisation implements core.OrganisationService.RemoveUserFromOrganisation
-func (o *OrganisationService) RemoveUserFromOrganisation(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) error {
+// RemoveUser implements core.OrganisationService.RemoveUser
+func (o *OrganisationService) RemoveUser(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) error {
 	return o.q.RemoveUserFromOrganisation(ctx, int32(UserID), int32(OrgID))
 }
 

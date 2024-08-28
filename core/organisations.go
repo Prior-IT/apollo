@@ -68,7 +68,7 @@ type OrganisationService interface {
 	// List the users that belong to an organisation or ErrOrganisationDoesNotExist if no such organisation exists
 	ListUsersInOrganisation(ctx context.Context, id OrganisationID) ([]User, error)
 	// Add user to an existing organisation
-	AddUserToOrganisation(ctx context.Context, UserID UserID, OrgID OrganisationID) error
+	AddUser(ctx context.Context, UserID UserID, OrgID OrganisationID) error
 	// Remove user from an organisation
-	RemoveUserFromOrganisation(ctx context.Context, UserID UserID, OrgID OrganisationID) error
+	RemoveUser(ctx context.Context, UserID UserID, OrgID OrganisationID) error
 }
