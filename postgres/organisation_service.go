@@ -26,8 +26,9 @@ var _ core.OrganisationService = &OrganisationService{}
 func (o *OrganisationService) CreateOrganisation(
 	ctx context.Context,
 	name string,
+	parentID *core.OrganisationID,
 ) (*core.Organisation, error) {
-	return o.AddOrganisation(ctx, o.db, name)
+	return o.AddOrganisation(ctx, o.db, name, parentID)
 }
 
 // Calls CreateOrganisation query using as a regular query or as a transaction
@@ -35,9 +36,15 @@ func (o *OrganisationService) AddOrganisation(
 	ctx context.Context,
 	dbtx sqlc.DBTX,
 	name string,
+	parentID *core.OrganisationID,
 ) (*core.Organisation, error) {
 	queries := sqlc.New(dbtx)
-	organisation, err := queries.CreateOrganisation(ctx, name)
+	var castParentID *int32
+	if parentID != nil {
+		intID := int32(*parentID)
+		castParentID = &intID
+	}
+	organisation, err := queries.CreateOrganisation(ctx, name, castParentID)
 	if err != nil {
 		return nil, convertPgError(err)
 	}
@@ -114,9 +121,18 @@ func convertOrganisation(organisation sqlc.ApolloOrganisation) (*core.Organisati
 	if err != nil {
 		return nil, err
 	}
+	var parentID *core.OrganisationID
+	if organisation.ParentID != nil {
+		parentIDVal, err := core.NewOrganisationID(uint(*organisation.ParentID))
+		if err != nil {
+			return nil, err
+		}
+		parentID = &parentIDVal
+	}
 	return &core.Organisation{
-		ID:   id,
-		Name: organisation.Name,
+		ID:       id,
+		Name:     organisation.Name,
+		ParentID: parentID,
 	}, nil
 }
 

@@ -20,16 +20,16 @@ func (q *Queries) AddUserToOrganisation(ctx context.Context, userID int32, organ
 }
 
 const createOrganisation = `-- name: CreateOrganisation :one
-INSERT INTO apollo.organisations (name)
-	VALUES ($1)
+INSERT INTO apollo.organisations (name, parent_id)
+	VALUES ($1, $2)
 RETURNING
-	id, name
+	id, name, parent_id
 `
 
-func (q *Queries) CreateOrganisation(ctx context.Context, name string) (ApolloOrganisation, error) {
-	row := q.db.QueryRow(ctx, createOrganisation, name)
+func (q *Queries) CreateOrganisation(ctx context.Context, name string, parentID *int32) (ApolloOrganisation, error) {
+	row := q.db.QueryRow(ctx, createOrganisation, name, parentID)
 	var i ApolloOrganisation
-	err := row.Scan(&i.ID, &i.Name)
+	err := row.Scan(&i.ID, &i.Name, &i.ParentID)
 	return i, err
 }
 
@@ -59,7 +59,7 @@ func (q *Queries) GetAmountOfOrganisations(ctx context.Context) (int64, error) {
 
 const getOrganisation = `-- name: GetOrganisation :one
 SELECT
-	id, name
+	id, name, parent_id
 FROM
 	apollo.organisations
 WHERE
@@ -70,13 +70,13 @@ LIMIT 1
 func (q *Queries) GetOrganisation(ctx context.Context, id int32) (ApolloOrganisation, error) {
 	row := q.db.QueryRow(ctx, getOrganisation, id)
 	var i ApolloOrganisation
-	err := row.Scan(&i.ID, &i.Name)
+	err := row.Scan(&i.ID, &i.Name, &i.ParentID)
 	return i, err
 }
 
 const listOrganisations = `-- name: ListOrganisations :many
 SELECT
-	id, name
+	id, name, parent_id
 FROM
 	apollo.organisations
 `
@@ -90,7 +90,7 @@ func (q *Queries) ListOrganisations(ctx context.Context) ([]ApolloOrganisation, 
 	var items []ApolloOrganisation
 	for rows.Next() {
 		var i ApolloOrganisation
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name, &i.ParentID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -103,7 +103,7 @@ func (q *Queries) ListOrganisations(ctx context.Context) ([]ApolloOrganisation, 
 
 const listOrganisationsForUser = `-- name: ListOrganisationsForUser :many
 SELECT
-	o.id, o.name
+	o.id, o.name, o.parent_id
 FROM
 	apollo.organisations AS o
 	INNER JOIN apollo.organisation_users AS ou ON o.id = ou.organisation_id
@@ -120,7 +120,7 @@ func (q *Queries) ListOrganisationsForUser(ctx context.Context, userID int32) ([
 	var items []ApolloOrganisation
 	for rows.Next() {
 		var i ApolloOrganisation
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name, &i.ParentID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
