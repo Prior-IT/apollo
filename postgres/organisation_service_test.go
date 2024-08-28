@@ -68,7 +68,7 @@ func TestOrganisationService(t *testing.T) {
 		user, err := UserService.CreateUser(ctx, tests.Faker.Name(), email)
 		tests.Check(err)
 
-		tests.Check(service.AddUserToOrganisation(ctx, user.ID, organisation.ID))
+		tests.Check(service.AddUser(ctx, user.ID, organisation.ID))
 
 		// List with user in organisation
 		users, err = service.ListUsersInOrganisation(ctx, organisation.ID)
@@ -77,7 +77,7 @@ func TestOrganisationService(t *testing.T) {
 		assert.Equal(t, users[0], *user)
 
 		// Remove user from organisation
-		tests.Check(service.RemoveUserFromOrganisation(ctx, user.ID, organisation.ID))
+		tests.Check(service.RemoveUser(ctx, user.ID, organisation.ID))
 		users, err = service.ListUsersInOrganisation(ctx, organisation.ID)
 		assert.Nil(t, err, "Getting users in organisation should not error")
 		assert.Len(t, users, 0, "Users list shoud be empty")
@@ -94,7 +94,7 @@ func TestOrganisationService(t *testing.T) {
 		user, err := UserService.CreateUser(ctx, tests.Faker.Name(), email)
 		tests.Check(err)
 
-		tests.Check(service.AddUserToOrganisation(ctx, user.ID, organisation.ID))
+		tests.Check(service.AddUser(ctx, user.ID, organisation.ID))
 
 		// Delete user
 		tests.Check(UserService.DeleteUser(ctx, user.ID))
