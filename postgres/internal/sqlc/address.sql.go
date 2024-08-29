@@ -82,6 +82,41 @@ func (q *Queries) GetAddress(ctx context.Context, id int32) (ApolloAddress, erro
 	return i, err
 }
 
+const listAddresses = `-- name: ListAddresses :many
+SELECT
+	id, street, number, postal_code, city, country, extra_line
+FROM
+	apollo.address
+`
+
+func (q *Queries) ListAddresses(ctx context.Context) ([]ApolloAddress, error) {
+	rows, err := q.db.Query(ctx, listAddresses)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ApolloAddress
+	for rows.Next() {
+		var i ApolloAddress
+		if err := rows.Scan(
+			&i.ID,
+			&i.Street,
+			&i.Number,
+			&i.PostalCode,
+			&i.City,
+			&i.Country,
+			&i.ExtraLine,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateAddress = `-- name: UpdateAddress :one
 UPDATE
 	apollo.address

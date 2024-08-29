@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
 	"github.com/prior-it/apollo/core"
 	"github.com/prior-it/apollo/postgres/internal/sqlc"
@@ -85,6 +86,14 @@ func (a *AddressService) UpdateAddress(
 	return convertAddress(dbAddress)
 }
 
+func (a *AddressService) ListAddresses(ctx context.Context) ([]core.Address, error) {
+	addresses, err := a.q.ListAddresses(ctx)
+	if err != nil {
+		return nil, convertPgError(err)
+	}
+	return convertAddressList(addresses)
+}
+
 func convertAddress(address sqlc.ApolloAddress) (*core.Address, error) {
 	id, err := core.NewAddressID(uint(address.ID))
 	if err != nil {
@@ -99,4 +108,19 @@ func convertAddress(address sqlc.ApolloAddress) (*core.Address, error) {
 		Country:    address.Country,
 		ExtraLine:  address.ExtraLine,
 	}, nil
+}
+
+func convertAddressList(addresss []sqlc.ApolloAddress) ([]core.Address, error) {
+	list := make([]core.Address, len(addresss))
+	for i, v := range addresss {
+		o, err := convertAddress(v)
+		if err != nil {
+			return nil, err
+		}
+		if o == nil {
+			return nil, errors.New("both address and error should never be nil")
+		}
+		list[i] = *o
+	}
+	return list, nil
 }

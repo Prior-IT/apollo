@@ -31,3 +31,9 @@ WHERE
 	id = $1
 RETURNING
 	*;
+
+-- name: ListAddresses :many
+SELECT
+	*
+FROM
+	apollo.address;

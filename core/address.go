@@ -62,4 +62,5 @@ type AddressService interface {
 	GetAddress(ctx context.Context, addressID AddressID) (*Address, error)
 	DeleteAddress(ctx context.Context, addressID AddressID) error
 	UpdateAddress(ctx context.Context, addressID AddressID, update AddressUpdateData) (*Address, error)
+	ListAddresses(ctx context.Context) ([]Address, error)
 }
