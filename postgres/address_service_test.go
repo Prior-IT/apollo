@@ -15,6 +15,7 @@ func TestAddressService(t *testing.T) {
 	db := tests.DB()
 	service := postgres.NewAddressService(db)
 	ctx := context.Background()
+	defer tests.DeleteAllAddresses(service)
 
 	t.Run("ok: create address", func(t *testing.T) {
 		fakeAddress := tests.Faker.Address()
