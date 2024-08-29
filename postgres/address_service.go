@@ -53,6 +53,27 @@ func (a *AddressService) GetAddress(ctx context.Context, id core.AddressID) (*co
 	return convertAddress(address)
 }
 
+// UpdateAddress implements core.AddressService.UpdateAddress
+func (a *AddressService) UpdateAddress(
+	ctx context.Context,
+	id core.AddressID,
+	data core.AddressUpdateData,
+) (*core.Address, error) {
+	dbAddress, err := a.q.UpdateAddress(ctx, sqlc.UpdateAddressParams{
+		ID:         int32(id),
+		Street:     data.Street,
+		Number:     data.Number,
+		PostalCode: data.PostalCode,
+		City:       data.City,
+		Country:    data.Country,
+		ExtraLine:  data.ExtraLine,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return convertAddress(dbAddress)
+}
+
 func convertAddress(address sqlc.ApolloAddress) (*core.Address, error) {
 	id, err := core.NewAddressID(uint(address.ID))
 	if err != nil {

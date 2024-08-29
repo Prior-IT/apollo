@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -37,22 +36,6 @@ func NewAddressID(id uint) (AddressID, error) {
 	return AddressID(id), nil
 }
 
-// ParseAddressID parses a string into an address id.
-func ParseAddressID(id string) (AddressID, error) {
-	integerID, err := strconv.Atoi(id)
-	if err != nil {
-		return 0, fmt.Errorf("cannot parse address id: %w", err)
-	}
-	if integerID < 0 {
-		return 0, errors.New("cannot parse address id: address ids cannot be negative")
-	}
-	addressID, err := NewAddressID(uint(integerID))
-	if err != nil {
-		return 0, fmt.Errorf("cannot parse address id: %w", err)
-	}
-	return addressID, nil
-}
-
 /**
  * APPLICATION
  */
@@ -66,8 +49,17 @@ type AddressCreateData struct {
 	ExtraLine  *string
 }
 
+type AddressUpdateData struct {
+	Street     *string
+	Number     *int32
+	PostalCode *int32
+	City       *string
+	Country    *string
+	ExtraLine  *string
+}
 type AddressService interface {
 	CreateAddress(ctx context.Context, address AddressCreateData) (*Address, error)
 	GetAddress(ctx context.Context, addressID AddressID) (*Address, error)
 	DeleteAddress(ctx context.Context, addressID AddressID) error
+	UpdateAddress(ctx context.Context, addressID AddressID, update AddressUpdateData) (*Address, error)
 }

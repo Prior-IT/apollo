@@ -81,3 +81,52 @@ func (q *Queries) GetAddress(ctx context.Context, id int32) (ApolloAddress, erro
 	)
 	return i, err
 }
+
+const updateAddress = `-- name: UpdateAddress :one
+UPDATE
+	apollo.address
+SET
+	street = COALESCE($2, street),
+	number = COALESCE($3, number),
+	extra_line = COALESCE($4, extra_line),
+	postal_code = COALESCE($5, postal_code),
+	city = COALESCE($6, city),
+	country = COALESCE($7, country)
+WHERE
+	id = $1
+RETURNING
+	id, street, number, postal_code, city, country, extra_line
+`
+
+type UpdateAddressParams struct {
+	ID         int32
+	Street     *string
+	Number     *int32
+	ExtraLine  *string
+	PostalCode *int32
+	City       *string
+	Country    *string
+}
+
+func (q *Queries) UpdateAddress(ctx context.Context, arg UpdateAddressParams) (ApolloAddress, error) {
+	row := q.db.QueryRow(ctx, updateAddress,
+		arg.ID,
+		arg.Street,
+		arg.Number,
+		arg.ExtraLine,
+		arg.PostalCode,
+		arg.City,
+		arg.Country,
+	)
+	var i ApolloAddress
+	err := row.Scan(
+		&i.ID,
+		&i.Street,
+		&i.Number,
+		&i.PostalCode,
+		&i.City,
+		&i.Country,
+		&i.ExtraLine,
+	)
+	return i, err
+}
