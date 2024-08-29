@@ -9,12 +9,13 @@ import (
 
 func NewAddressService(DB *ApolloDB) *AddressService {
 	q := sqlc.New(DB)
-	return &AddressService{q}
+	return &AddressService{DB, q}
 }
 
 // Postgres implementation of the core AddressService interface.
 type AddressService struct {
-	q *sqlc.Queries
+	db *ApolloDB
+	q  *sqlc.Queries
 }
 
 // Force struct to implement the core interface
@@ -25,7 +26,17 @@ func (a *AddressService) CreateAddress(
 	ctx context.Context,
 	addressCreate core.AddressCreateData,
 ) (*core.Address, error) {
-	address, err := a.q.CreateAddress(ctx, sqlc.CreateAddressParams{
+	return a.CreateAddressTx(ctx, a.db, addressCreate)
+}
+
+// CreateAddress implements core.AddressService.CreateAddress
+func (a *AddressService) CreateAddressTx(
+	ctx context.Context,
+	dbtx sqlc.DBTX,
+	addressCreate core.AddressCreateData,
+) (*core.Address, error) {
+	q := sqlc.New(dbtx)
+	address, err := q.CreateAddress(ctx, sqlc.CreateAddressParams{
 		Street:     addressCreate.Street,
 		Number:     int32(addressCreate.Number),
 		PostalCode: int32(addressCreate.PostalCode),
