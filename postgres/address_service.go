@@ -25,7 +25,7 @@ var _ core.AddressService = &AddressService{}
 // CreateAddress implements core.AddressService.CreateAddress
 func (a *AddressService) CreateAddress(
 	ctx context.Context,
-	addressCreate core.AddressCreateData,
+	addressCreate core.Address,
 ) (*core.Address, error) {
 	return a.CreateAddressTx(ctx, a.db, addressCreate)
 }
@@ -34,13 +34,13 @@ func (a *AddressService) CreateAddress(
 func (a *AddressService) CreateAddressTx(
 	ctx context.Context,
 	dbtx sqlc.DBTX,
-	addressCreate core.AddressCreateData,
+	addressCreate core.Address,
 ) (*core.Address, error) {
 	q := sqlc.New(dbtx)
 	address, err := q.CreateAddress(ctx, sqlc.CreateAddressParams{
 		Street:     addressCreate.Street,
-		Number:     int32(addressCreate.Number),
-		PostalCode: int32(addressCreate.PostalCode),
+		Number:     addressCreate.Number,
+		PostalCode: addressCreate.PostalCode,
 		City:       addressCreate.City,
 		Country:    addressCreate.Country,
 		ExtraLine:  addressCreate.ExtraLine,
@@ -102,8 +102,8 @@ func convertAddress(address sqlc.ApolloAddress) (*core.Address, error) {
 	return &core.Address{
 		ID:         id,
 		Street:     address.Street,
-		Number:     uint(address.Number),
-		PostalCode: uint(address.PostalCode),
+		Number:     address.Number,
+		PostalCode: address.PostalCode,
 		City:       address.City,
 		Country:    address.Country,
 		ExtraLine:  address.ExtraLine,

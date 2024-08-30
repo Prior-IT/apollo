@@ -13,8 +13,8 @@ import (
 type Address struct {
 	ID         AddressID
 	Street     string
-	Number     uint
-	PostalCode uint
+	Number     int32
+	PostalCode int32
 	City       string
 	Country    string
 	ExtraLine  *string
@@ -40,15 +40,6 @@ func NewAddressID(id uint) (AddressID, error) {
  * APPLICATION
  */
 
-type AddressCreateData struct {
-	Street     string
-	Number     uint
-	PostalCode uint
-	City       string
-	Country    string
-	ExtraLine  *string
-}
-
 type AddressUpdateData struct {
 	Street     *string
 	Number     *int32
@@ -58,7 +49,8 @@ type AddressUpdateData struct {
 	ExtraLine  *string
 }
 type AddressService interface {
-	CreateAddress(ctx context.Context, address AddressCreateData) (*Address, error)
+	// Creates an Address from an Address struct, the ID field of the struct gets ignored here
+	CreateAddress(ctx context.Context, address Address) (*Address, error)
 	GetAddress(ctx context.Context, addressID AddressID) (*Address, error)
 	DeleteAddress(ctx context.Context, addressID AddressID) error
 	UpdateAddress(ctx context.Context, addressID AddressID, update AddressUpdateData) (*Address, error)
