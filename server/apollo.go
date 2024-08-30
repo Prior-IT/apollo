@@ -33,27 +33,9 @@ type Apollo struct {
 // E.g. fields that are stored in the active session.
 func (apollo *Apollo) populate() {
 	if apollo.store != nil {
-		user, err := apollo.retrieveUser()
-		if errors.Is(err, core.ErrUnauthenticated) {
-			apollo.User = nil
-			apollo.LogField("active_user_id", slog.AnyValue(nil))
-		} else if err != nil {
-			slog.Error("Could not retrieve user object from session", "error", err)
-		} else {
-			apollo.User = user
-			apollo.LogField("active_user_id", slog.AnyValue(apollo.User.ID))
-		}
+		apollo.populateUser()
+		apollo.populateOrganisation()
 
-		organisation, err := apollo.retrieveOrganisation()
-		if errors.Is(err, core.ErrUnauthenticated) || errors.Is(err, core.ErrNoActiveOrganisation) {
-			apollo.Organisation = nil
-			apollo.LogField("active_organisation_id", slog.AnyValue(nil))
-		} else if err != nil {
-			slog.Error("Could not retrieve organisation object from session", "error", err)
-		} else {
-			apollo.Organisation = organisation
-			apollo.LogField("active_organisation_id", slog.AnyValue(apollo.Organisation.ID))
-		}
 	} else {
 		slog.Warn("No session store provided, it will not be possible to log in")
 	}
@@ -64,6 +46,40 @@ func (apollo *Apollo) populate() {
 		}
 	} else {
 		slog.Warn("No permissions service provided, all permission checks will fail")
+	}
+}
+
+func (apollo *Apollo) populateUser() {
+	user, err := apollo.retrieveUser()
+	if errors.Is(err, core.ErrUnauthenticated) {
+		apollo.User = nil
+		apollo.LogField("active_user_id", slog.AnyValue(nil))
+	} else if err != nil {
+		slog.Error("Could not retrieve user object from session", "error", err)
+		err = apollo.Logout()
+		if err != nil {
+			slog.Error("Could not log out of the invalid session", "error", err)
+		}
+	} else {
+		apollo.User = user
+		apollo.LogField("active_user_id", slog.AnyValue(apollo.User.ID))
+	}
+}
+
+func (apollo *Apollo) populateOrganisation() {
+	organisation, err := apollo.retrieveOrganisation()
+	if errors.Is(err, core.ErrUnauthenticated) || errors.Is(err, core.ErrNoActiveOrganisation) {
+		apollo.Organisation = nil
+		apollo.LogField("active_organisation_id", slog.AnyValue(nil))
+	} else if err != nil {
+		slog.Error("Could not retrieve organisation object from session", "error", err)
+		err = apollo.Logout()
+		if err != nil {
+			slog.Error("Could not log out of the invalid session", "error", err)
+		}
+	} else {
+		apollo.Organisation = organisation
+		apollo.LogField("active_organisation_id", slog.AnyValue(apollo.Organisation.ID))
 	}
 }
 
