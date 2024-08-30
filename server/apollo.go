@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -16,15 +17,16 @@ import (
 )
 
 type Apollo struct {
-	Writer      http.ResponseWriter
-	Request     *http.Request
-	logger      *slog.Logger
-	layout      templ.Component
-	IsDebug     bool
-	UseSSL      bool
-	User        *core.User
-	permissions permissions.Service
-	store       sessions.Store
+	Writer       http.ResponseWriter
+	Request      *http.Request
+	logger       *slog.Logger
+	layout       templ.Component
+	IsDebug      bool
+	UseSSL       bool
+	User         *core.User
+	Organisation *core.Organisation
+	permissions  permissions.Service
+	store        sessions.Store
 }
 
 // Populate populates the Apollo object with fields that need to be retrieved after initialisation.
@@ -32,12 +34,21 @@ type Apollo struct {
 func (apollo *Apollo) populate() {
 	if apollo.store != nil {
 		User, err := apollo.retrieveUser()
-		if err == core.ErrUnauthenticated {
+		if errors.Is(err, core.ErrUnauthenticated) {
 			apollo.User = nil
 		} else if err != nil {
 			slog.Error("Could not retrieve user object from session", "error", err)
 		} else {
 			apollo.User = User
+		}
+
+		Organisation, err := apollo.retrieveOrganisation()
+		if errors.Is(err, core.ErrUnauthenticated) || errors.Is(err, core.ErrNoActiveOrganisation) {
+			apollo.Organisation = nil
+		} else if err != nil {
+			slog.Error("Could not retrieve organisation object from session", "error", err)
+		} else {
+			apollo.Organisation = Organisation
 		}
 	}
 	if apollo.permissions != nil {
@@ -202,6 +213,19 @@ func (apollo *Apollo) Requires(permission permissions.Permission) error {
 	return nil
 }
 
+// RequiresStrict will return core.ErrForbidden if the current user does not have the specified permission and nil otherwise.
+// If no user is logged in at all, this will return core.ErrUnauthenticated.
+// This will use the strict permission check, which ignores global permissions and only checks the active organisation.
+func (apollo *Apollo) RequiresStrict(permission permissions.Permission) error {
+	if err := apollo.RequiresLogin(); err != nil {
+		return err
+	}
+	if !apollo.Has(permission) {
+		return core.ErrForbidden
+	}
+	return nil
+}
+
 // Has returns a boolean indicating whether or not the currently logged in user has the specified permission in any
 // of their permission groups or not. If no user is logged in, this will return false.
 func (apollo *Apollo) Has(permission permissions.Permission) bool {
@@ -222,7 +246,55 @@ func (apollo *Apollo) Has(permission permissions.Permission) bool {
 	}
 	ok, err := apollo.permissions.HasAny(apollo.Context(), apollo.User.ID, permission)
 	if err != nil {
-		slog.Error("Error while checking permissions", "error", err)
+		slog.Error("Error while checking global permissions", "error", err)
+		return false
+	}
+	if !ok && apollo.Organisation != nil {
+		// User does not have the global permission -> check active organisation
+		ok, err = apollo.permissions.HasAnyForOrg(
+			apollo.Context(),
+			apollo.User.ID,
+			apollo.Organisation.ID,
+			permission,
+		)
+		if err != nil {
+			slog.Error("Error while checking organisation permissions", "error", err)
+			return false
+		}
+	}
+	return ok
+}
+
+// HasStrict returns a boolean indicating whether or not the currently logged in user has the specified permission in
+// the currently active organisation (and only there, global permissions are ignored). If no user is logged in or they
+// haven't chosen an active organisation yet, this will return false.
+func (apollo *Apollo) HasStrict(permission permissions.Permission) bool {
+	if apollo.permissions == nil {
+		slog.Warn(
+			"Trying to use permission system while Apollo does not have access to a permissions.Service!",
+		)
+		return false
+	}
+	if apollo.User == nil {
+		slog.Warn(
+			"Trying to use permission system while no user is logged in!",
+		)
+		return false
+	}
+	if apollo.User.Admin {
+		return true
+	}
+	if apollo.Organisation == nil {
+		return false
+	}
+	ok, err := apollo.permissions.HasAnyForOrg(
+		apollo.Context(),
+		apollo.User.ID,
+		apollo.Organisation.ID,
+		permission,
+	)
+	if err != nil {
+		slog.Error("Error while checking organisation permissions", "error", err)
 		return false
 	}
 	return ok

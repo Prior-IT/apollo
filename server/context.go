@@ -11,6 +11,8 @@ const (
 	ctxLoggedIn contextKey = iota
 	ctxUserID
 	ctxUserName
+	ctxOrganisationID
+	ctxOrganisationName
 	ctxSession
 	ctxDebug
 	ctxIsAdmin
@@ -32,6 +34,14 @@ func UserID(ctx context.Context) core.UserID {
 
 func UserName(ctx context.Context) string {
 	return ctx.Value(ctxUserName).(string)
+}
+
+func OrganisationID(ctx context.Context) core.OrganisationID {
+	return ctx.Value(ctxOrganisationID).(core.OrganisationID)
+}
+
+func OrganisationName(ctx context.Context) string {
+	return ctx.Value(ctxOrganisationName).(string)
 }
 
 // Session provides access to the current user's session.
