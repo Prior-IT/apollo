@@ -248,7 +248,7 @@ func (apollo *Apollo) RequiresStrict(permission permissions.Permission) error {
 	if err := apollo.RequiresLogin(); err != nil {
 		return err
 	}
-	if !apollo.Has(permission) {
+	if !apollo.HasStrict(permission) {
 		return core.ErrForbidden
 	}
 	return nil
