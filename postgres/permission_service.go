@@ -231,6 +231,36 @@ func (p *PermissionService) HasAnyForOrg(
 	return false, nil
 }
 
+// HasAnyForOrgTree implements permissions.Service.
+func (p *PermissionService) HasAnyForOrgTree(
+	ctx context.Context,
+	userID core.UserID,
+	orgID core.OrganisationID,
+	permission permissions.Permission,
+) (bool, error) {
+	ok, err := p.HasAnyForOrg(ctx, userID, orgID, permission)
+	if err != nil {
+		return false, err
+	}
+	if ok {
+		return true, nil
+	}
+	// Check parent if we didn't find the permission in the current organisation
+	parentID, err := p.q.GetParentOrganisation(ctx, int32(orgID))
+	if err != nil {
+		return false, fmt.Errorf("cannot get parent organisation id: %w", err)
+	}
+	if parentID != nil {
+		pID, err := core.NewOrganisationID(uint(*parentID))
+		if err != nil {
+			return false, err
+		}
+		return p.HasAnyForOrgTree(ctx, userID, pID, permission)
+	}
+	// If there is no more parent organisation and we haven't found it yet, return false
+	return false, nil
+}
+
 // RenamePermissionGroup implements permissions.Service.
 func (p *PermissionService) RenamePermissionGroup(
 	ctx context.Context,
@@ -296,7 +326,11 @@ func (p *PermissionService) AddUserToPermissionGroupForOrganisation(
 	OrgID core.OrganisationID,
 	GroupID permissions.PermissionGroupID,
 ) error {
-	params := sqlc.AddUserToPermissionGroupForOrganisationParams{PermissionGroupID: int32(GroupID), UserID: int32(UserID), OrganisationID: int32(OrgID)}
+	params := sqlc.AddUserToPermissionGroupForOrganisationParams{
+		PermissionGroupID: int32(GroupID),
+		UserID:            int32(UserID),
+		OrganisationID:    int32(OrgID),
+	}
 	return p.q.AddUserToPermissionGroupForOrganisation(ctx, params)
 }
 

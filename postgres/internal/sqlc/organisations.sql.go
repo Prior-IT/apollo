@@ -11,7 +11,7 @@ import (
 
 const addUserToOrganisation = `-- name: AddUserToOrganisation :exec
 INSERT INTO apollo.organisation_users (user_id, organisation_id)
-	VALUES ($1, $2)
+    VALUES ($1, $2)
 `
 
 func (q *Queries) AddUserToOrganisation(ctx context.Context, userID int32, organisationID int32) error {
@@ -21,9 +21,9 @@ func (q *Queries) AddUserToOrganisation(ctx context.Context, userID int32, organ
 
 const createOrganisation = `-- name: CreateOrganisation :one
 INSERT INTO apollo.organisations (name, parent_id)
-	VALUES ($1, $2)
+    VALUES ($1, $2)
 RETURNING
-	id, name, parent_id
+    id, name, parent_id
 `
 
 func (q *Queries) CreateOrganisation(ctx context.Context, name string, parentID *int32) (ApolloOrganisation, error) {
@@ -45,9 +45,9 @@ func (q *Queries) DeleteOrganisation(ctx context.Context, id int32) error {
 
 const getAmountOfOrganisations = `-- name: GetAmountOfOrganisations :one
 SELECT
-	COUNT(id)
+    COUNT(id)
 FROM
-	apollo.organisations
+    apollo.organisations
 `
 
 func (q *Queries) GetAmountOfOrganisations(ctx context.Context) (int64, error) {
@@ -59,11 +59,11 @@ func (q *Queries) GetAmountOfOrganisations(ctx context.Context) (int64, error) {
 
 const getOrganisation = `-- name: GetOrganisation :one
 SELECT
-	id, name, parent_id
+    id, name, parent_id
 FROM
-	apollo.organisations
+    apollo.organisations
 WHERE
-	id = $1
+    id = $1
 LIMIT 1
 `
 
@@ -74,11 +74,27 @@ func (q *Queries) GetOrganisation(ctx context.Context, id int32) (ApolloOrganisa
 	return i, err
 }
 
+const getParentOrganisation = `-- name: GetParentOrganisation :one
+SELECT
+    parent_id
+FROM
+    apollo.organisations
+WHERE
+    id = $1
+`
+
+func (q *Queries) GetParentOrganisation(ctx context.Context, id int32) (*int32, error) {
+	row := q.db.QueryRow(ctx, getParentOrganisation, id)
+	var parent_id *int32
+	err := row.Scan(&parent_id)
+	return parent_id, err
+}
+
 const listOrganisations = `-- name: ListOrganisations :many
 SELECT
-	id, name, parent_id
+    id, name, parent_id
 FROM
-	apollo.organisations
+    apollo.organisations
 `
 
 func (q *Queries) ListOrganisations(ctx context.Context) ([]ApolloOrganisation, error) {
@@ -103,12 +119,12 @@ func (q *Queries) ListOrganisations(ctx context.Context) ([]ApolloOrganisation, 
 
 const listOrganisationsForUser = `-- name: ListOrganisationsForUser :many
 SELECT
-	o.id, o.name, o.parent_id
+    o.id, o.name, o.parent_id
 FROM
-	apollo.organisations AS o
-	INNER JOIN apollo.organisation_users AS ou ON o.id = ou.organisation_id
+    apollo.organisations AS o
+    INNER JOIN apollo.organisation_users AS ou ON o.id = ou.organisation_id
 WHERE
-	ou.user_id = $1
+    ou.user_id = $1
 `
 
 func (q *Queries) ListOrganisationsForUser(ctx context.Context, userID int32) ([]ApolloOrganisation, error) {
@@ -133,12 +149,12 @@ func (q *Queries) ListOrganisationsForUser(ctx context.Context, userID int32) ([
 
 const listUsersInOrganisation = `-- name: ListUsersInOrganisation :many
 SELECT
-	u.id, u.name, u.email, u.joined, u.admin
+    u.id, u.name, u.email, u.joined, u.admin
 FROM
-	apollo.users AS u
-	INNER JOIN apollo.organisation_users AS ou ON u.id = ou.user_id
+    apollo.users AS u
+    INNER JOIN apollo.organisation_users AS ou ON u.id = ou.user_id
 WHERE
-	ou.organisation_id = $1
+    ou.organisation_id = $1
 `
 
 func (q *Queries) ListUsersInOrganisation(ctx context.Context, organisationID int32) ([]ApolloUser, error) {
@@ -168,10 +184,9 @@ func (q *Queries) ListUsersInOrganisation(ctx context.Context, organisationID in
 }
 
 const removeUserFromOrganisation = `-- name: RemoveUserFromOrganisation :exec
-DELETE FROM
-	apollo.organisation_users
-WHERE
-	user_id = $1 AND organisation_id = $2
+DELETE FROM apollo.organisation_users
+WHERE user_id = $1
+    AND organisation_id = $2
 `
 
 func (q *Queries) RemoveUserFromOrganisation(ctx context.Context, userID int32, organisationID int32) error {
