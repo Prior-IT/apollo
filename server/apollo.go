@@ -36,26 +36,34 @@ func (apollo *Apollo) populate() {
 		user, err := apollo.retrieveUser()
 		if errors.Is(err, core.ErrUnauthenticated) {
 			apollo.User = nil
+			apollo.LogField("active_user_id", slog.AnyValue(nil))
 		} else if err != nil {
 			slog.Error("Could not retrieve user object from session", "error", err)
 		} else {
 			apollo.User = user
+			apollo.LogField("active_user_id", slog.AnyValue(apollo.User.ID))
 		}
 
 		organisation, err := apollo.retrieveOrganisation()
 		if errors.Is(err, core.ErrUnauthenticated) || errors.Is(err, core.ErrNoActiveOrganisation) {
 			apollo.Organisation = nil
+			apollo.LogField("active_organisation_id", slog.AnyValue(nil))
 		} else if err != nil {
 			slog.Error("Could not retrieve organisation object from session", "error", err)
 		} else {
 			apollo.Organisation = organisation
+			apollo.LogField("active_organisation_id", slog.AnyValue(apollo.Organisation.ID))
 		}
+	} else {
+		slog.Warn("No session store provided, it will not be possible to log in")
 	}
 	if apollo.permissions != nil {
 		err := permissions.RegisterApolloPermissions(apollo.permissions)
 		if err != nil {
 			slog.Error("Could not register Apollo permissions", "error", err)
 		}
+	} else {
+		slog.Warn("No permissions service provided, all permission checks will fail")
 	}
 }
 
@@ -91,6 +99,10 @@ func (apollo *Apollo) LogString(field string, value string) {
 }
 
 // LogField will add the specified field and its value to the current request's span
+//
+// # Example
+//
+// apollo.LogField("user_id", slog.IntValue(user.id)
 func (apollo *Apollo) LogField(field string, value slog.Value) {
 	httplog.LogEntrySetField(apollo.Context(), field, value)
 }
@@ -258,7 +270,13 @@ func (apollo *Apollo) Has(permission permissions.Permission) bool {
 			permission,
 		)
 		if err != nil {
-			slog.Error("Error while checking organisation permissions", "error", err)
+			slog.Error(
+				"Error while checking organisation permissions",
+				"error",
+				err,
+				"organisation_id",
+				apollo.Organisation.ID,
+			)
 			return false
 		}
 	}
@@ -294,7 +312,13 @@ func (apollo *Apollo) HasStrict(permission permissions.Permission) bool {
 		permission,
 	)
 	if err != nil {
-		slog.Error("Error while checking organisation permissions", "error", err)
+		slog.Error(
+			"Error while checking organisation permissions",
+			"error",
+			err,
+			"organisation_id",
+			apollo.Organisation.ID,
+		)
 		return false
 	}
 	return ok
