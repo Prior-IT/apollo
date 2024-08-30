@@ -19,10 +19,10 @@ func TestAddressService(t *testing.T) {
 
 	t.Run("ok: create address", func(t *testing.T) {
 		fakeAddress := tests.Faker.Address()
-		createData := core.AddressCreateData{
+		createData := core.Address{
 			Street:     fakeAddress.Street,
-			Number:     uint(tests.Faker.Number(1, 100000)),
-			PostalCode: uint(tests.Faker.Number(1, 100000)),
+			Number:     tests.Faker.Zip(),
+			PostalCode: fakeAddress.Zip,
 			ExtraLine:  &fakeAddress.State,
 			City:       fakeAddress.City,
 			Country:    fakeAddress.Country,
@@ -41,10 +41,10 @@ func TestAddressService(t *testing.T) {
 
 	t.Run("ok: update address", func(t *testing.T) {
 		fakeAddress := tests.Faker.Address()
-		createData := core.AddressCreateData{
+		createData := core.Address{
 			Street:     fakeAddress.Street,
-			Number:     uint(tests.Faker.Number(1, 100000)),
-			PostalCode: uint(tests.Faker.Number(1, 100000)),
+			Number:     tests.Faker.Zip(),
+			PostalCode: fakeAddress.Zip,
 			City:       fakeAddress.City,
 			Country:    fakeAddress.Country,
 		}
@@ -75,10 +75,10 @@ func TestAddressService(t *testing.T) {
 
 	t.Run("ok: delete address", func(t *testing.T) {
 		fakeAddress := tests.Faker.Address()
-		createData := core.AddressCreateData{
+		createData := core.Address{
 			Street:     fakeAddress.Street,
-			Number:     uint(tests.Faker.Number(1, 100000)),
-			PostalCode: uint(tests.Faker.Number(1, 100000)),
+			Number:     tests.Faker.Zip(),
+			PostalCode: fakeAddress.Zip,
 			ExtraLine:  &fakeAddress.State,
 			City:       fakeAddress.City,
 			Country:    fakeAddress.Country,
