@@ -81,7 +81,7 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 		return nil, core.ErrUnauthenticated
 	}
 
-	ID, ok := session.Values[sessionUserID].(core.UserID)
+	id, ok := session.Values[sessionUserID].(core.UserID)
 	if !ok {
 		return nil, fmt.Errorf(
 			"invalid user id stored in session: %v",
@@ -89,9 +89,9 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 		)
 	}
 
-	IsAdmin, ok := session.Values[sessionIsAdmin].(bool)
+	isAdmin, ok := session.Values[sessionIsAdmin].(bool)
 	if session.Values[sessionIsAdmin] == nil {
-		IsAdmin = false
+		isAdmin = false
 	} else if !ok {
 		return nil, fmt.Errorf(
 			"invalid user is admin stored in session: %v",
@@ -99,7 +99,7 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 		)
 	}
 
-	Name, ok := session.Values[sessionUserName].(string)
+	name, ok := session.Values[sessionUserName].(string)
 	if !ok {
 		return nil, fmt.Errorf(
 			"invalid user name stored in session: %v",
@@ -114,12 +114,12 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 			session.Values[sessionEmail],
 		)
 	}
-	Email, err := core.NewEmailAddress(emailStr)
+	email, err := core.NewEmailAddress(emailStr)
 	if err != nil {
 		return nil, fmt.Errorf("session e-mail address invalid: %w", err)
 	}
 
-	Joined, ok := session.Values[sessionJoined].(time.Time)
+	joined, ok := session.Values[sessionJoined].(time.Time)
 	if !ok {
 		return nil, fmt.Errorf(
 			"invalid joined time stored in session: %v",
@@ -128,11 +128,11 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 	}
 
 	return &core.User{
-		ID:     ID,
-		Name:   Name,
-		Email:  Email,
-		Admin:  IsAdmin,
-		Joined: Joined,
+		ID:     id,
+		Name:   name,
+		Email:  email,
+		Admin:  isAdmin,
+		Joined: joined,
 	}, nil
 }
 
@@ -154,7 +154,7 @@ func (apollo *Apollo) retrieveOrganisation() (*core.Organisation, error) {
 		return nil, core.ErrNoActiveOrganisation
 	}
 
-	ID, ok := session.Values[sessionOrganisationID].(core.OrganisationID)
+	id, ok := session.Values[sessionOrganisationID].(core.OrganisationID)
 	if !ok {
 		return nil, fmt.Errorf(
 			"invalid organisation id stored in session: %v",
@@ -162,7 +162,7 @@ func (apollo *Apollo) retrieveOrganisation() (*core.Organisation, error) {
 		)
 	}
 
-	Name, ok := session.Values[sessionOrganisationName].(string)
+	name, ok := session.Values[sessionOrganisationName].(string)
 	if !ok {
 		return nil, fmt.Errorf(
 			"invalid organisation name stored in session: %v",
@@ -171,8 +171,8 @@ func (apollo *Apollo) retrieveOrganisation() (*core.Organisation, error) {
 	}
 
 	return &core.Organisation{
-		ID:   ID,
-		Name: Name,
+		ID:   id,
+		Name: name,
 	}, nil
 }
 
