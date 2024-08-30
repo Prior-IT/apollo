@@ -30,7 +30,6 @@ func (a *AddressService) CreateAddress(
 	return a.CreateAddressTx(ctx, a.db, addressCreate)
 }
 
-// CreateAddress implements core.AddressService.CreateAddress
 func (a *AddressService) CreateAddressTx(
 	ctx context.Context,
 	dbtx sqlc.DBTX,
@@ -86,6 +85,7 @@ func (a *AddressService) UpdateAddress(
 	return convertAddress(dbAddress)
 }
 
+// ListAddresses implements core.AddressService.ListAddresses
 func (a *AddressService) ListAddresses(ctx context.Context) ([]core.Address, error) {
 	addresses, err := a.q.ListAddresses(ctx)
 	if err != nil {
