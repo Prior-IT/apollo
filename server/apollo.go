@@ -33,22 +33,22 @@ type Apollo struct {
 // E.g. fields that are stored in the active session.
 func (apollo *Apollo) populate() {
 	if apollo.store != nil {
-		User, err := apollo.retrieveUser()
+		user, err := apollo.retrieveUser()
 		if errors.Is(err, core.ErrUnauthenticated) {
 			apollo.User = nil
 		} else if err != nil {
 			slog.Error("Could not retrieve user object from session", "error", err)
 		} else {
-			apollo.User = User
+			apollo.User = user
 		}
 
-		Organisation, err := apollo.retrieveOrganisation()
+		organisation, err := apollo.retrieveOrganisation()
 		if errors.Is(err, core.ErrUnauthenticated) || errors.Is(err, core.ErrNoActiveOrganisation) {
 			apollo.Organisation = nil
 		} else if err != nil {
 			slog.Error("Could not retrieve organisation object from session", "error", err)
 		} else {
-			apollo.Organisation = Organisation
+			apollo.Organisation = organisation
 		}
 	}
 	if apollo.permissions != nil {
