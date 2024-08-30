@@ -18,9 +18,9 @@ RETURNING
 
 type CreateAddressParams struct {
 	Street     string
-	Number     int32
+	Number     string
 	ExtraLine  *string
-	PostalCode int32
+	PostalCode string
 	City       string
 	Country    string
 }
@@ -136,9 +136,9 @@ RETURNING
 type UpdateAddressParams struct {
 	ID         int32
 	Street     *string
-	Number     *int32
+	Number     *string
 	ExtraLine  *string
-	PostalCode *int32
+	PostalCode *string
 	City       *string
 	Country    *string
 }

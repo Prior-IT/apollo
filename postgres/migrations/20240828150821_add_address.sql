@@ -3,8 +3,8 @@
 CREATE TABLE IF NOT EXISTS apollo.address (
 	id serial PRIMARY KEY,
 	street text NOT NULL,
-	number integer NOT NULL,
-	postal_code integer NOT NULL,
+	number text NOT NULL,
+	postal_code text NOT NULL,
 	city text NOT NULL,
 	country text NOT NULL,
 	extra_line text

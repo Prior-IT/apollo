@@ -26,8 +26,8 @@ type ApolloAccountCache struct {
 type ApolloAddress struct {
 	ID         int32
 	Street     string
-	Number     int32
-	PostalCode int32
+	Number     string
+	PostalCode string
 	City       string
 	Country    string
 	ExtraLine  *string

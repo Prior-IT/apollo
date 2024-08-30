@@ -13,8 +13,8 @@ import (
 type Address struct {
 	ID         AddressID
 	Street     string
-	Number     int32
-	PostalCode int32
+	Number     string
+	PostalCode string
 	City       string
 	Country    string
 	ExtraLine  *string
@@ -42,8 +42,8 @@ func NewAddressID(id uint) (AddressID, error) {
 
 type AddressUpdateData struct {
 	Street     *string
-	Number     *int32
-	PostalCode *int32
+	Number     *string
+	PostalCode *string
 	City       *string
 	Country    *string
 	ExtraLine  *string
