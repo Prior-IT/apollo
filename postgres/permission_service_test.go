@@ -5,11 +5,32 @@ import (
 	"log"
 	"testing"
 
+	"github.com/prior-it/apollo/core"
 	"github.com/prior-it/apollo/permissions"
 	"github.com/prior-it/apollo/postgres"
 	"github.com/prior-it/apollo/tests"
 	"github.com/stretchr/testify/assert"
 )
+
+func CreateUserWithPermissions(
+	db *postgres.ApolloDB,
+	Permissions map[permissions.Permission]bool,
+) *core.User {
+	ctx := context.Background()
+	service := postgres.NewPermissionService(db)
+	userService := postgres.NewUserService(db)
+
+	group, err := service.CreatePermissionGroup(ctx, &permissions.PermissionGroup{
+		Permissions: Permissions,
+	})
+	tests.Check(err)
+
+	user := tests.CreateRegularUser(userService)
+	err = service.AddUserToPermissionGroup(ctx, user.ID, group.ID)
+	tests.Check(err)
+
+	return user
+}
 
 func TestPermissionService(t *testing.T) {
 	db := tests.DB()
@@ -88,5 +109,49 @@ func TestPermissionService(t *testing.T) {
 		} {
 			assert.True(t, perms[p], "Permission %q should be true in combination", p)
 		}
+	})
+
+	t.Run("ok: existing enabled permission", func(t *testing.T) {
+		user := CreateUserWithPermissions(db, map[permissions.Permission]bool{
+			permissions.PermViewOwnUser:  true,
+			permissions.PermEditOwnUser:  true,
+			permissions.PermEditAllUsers: false,
+		})
+		result, err := service.HasAny(ctx, user.ID, permissions.PermViewOwnUser)
+		assert.Nil(t, err)
+		assert.True(t, result, "Permission that was set to true should return true")
+	})
+
+	t.Run("ok: existing disabled permission", func(t *testing.T) {
+		user := CreateUserWithPermissions(db, map[permissions.Permission]bool{
+			permissions.PermViewOwnUser:  true,
+			permissions.PermEditOwnUser:  true,
+			permissions.PermEditAllUsers: false,
+		})
+		result, err := service.HasAny(ctx, user.ID, permissions.PermEditAllUsers)
+		assert.Nil(t, err)
+		assert.False(t, result, "Permission that was set to false should return false")
+	})
+
+	t.Run("ok: missing permission should be false", func(t *testing.T) {
+		user := CreateUserWithPermissions(db, map[permissions.Permission]bool{
+			permissions.PermViewOwnUser:  true,
+			permissions.PermEditOwnUser:  true,
+			permissions.PermEditAllUsers: false,
+		})
+		result, err := service.HasAny(ctx, user.ID, permissions.PermEditAllOrganisations)
+		assert.Nil(t, err)
+		assert.False(t, result, "Permission that was not set should return false")
+	})
+
+	t.Run("ok: non-existent permission should be false", func(t *testing.T) {
+		user := CreateUserWithPermissions(db, map[permissions.Permission]bool{
+			permissions.PermViewOwnUser:  true,
+			permissions.PermEditOwnUser:  true,
+			permissions.PermEditAllUsers: false,
+		})
+		result, err := service.HasAny(ctx, user.ID, permissions.Permission("i do not exist"))
+		assert.Nil(t, err)
+		assert.False(t, result, "Permission that does not exist should return false")
 	})
 }

@@ -13,12 +13,14 @@ type contextKey uint
 const cookieUser = "apollo-user"
 
 const (
-	sessionLoggedIn = "apollo-logged-in"
-	sessionIsAdmin  = "apollo-user-admin"
-	sessionUserName = "apollo-user-name"
-	sessionEmail    = "apollo-user-email"
-	sessionJoined   = "apollo-user-joined"
-	sessionUserID   = "apollo-user-id"
+	sessionLoggedIn         = "apollo-logged-in"
+	sessionIsAdmin          = "apollo-user-admin"
+	sessionUserName         = "apollo-user-name"
+	sessionEmail            = "apollo-user-email"
+	sessionJoined           = "apollo-user-joined"
+	sessionUserID           = "apollo-user-id"
+	sessionOrganisationID   = "apollo-organisation-id"
+	sessionOrganisationName = "apollo-organisation-name"
 )
 
 // Login will log in with the specified user.
@@ -49,6 +51,24 @@ func (apollo *Apollo) Login(user *core.User) error {
 	return apollo.store.Save(apollo.Request, apollo.Writer, session)
 }
 
+// SetActiveOrganisation changes the "active organisation". This might influence some other organisation-dependent requests
+// such as permission checks.
+func (apollo *Apollo) SetActiveOrganisation(organisation *core.Organisation) error {
+	if apollo.store == nil {
+		panic("you need to specify a session store before logging in")
+	}
+	session := Session(apollo.Context())
+	if organisation != nil {
+		session.Values[sessionOrganisationID] = organisation.ID
+		session.Values[sessionOrganisationName] = organisation.Name
+	} else {
+		session.Values[sessionOrganisationID] = nil
+		session.Values[sessionOrganisationName] = nil
+	}
+	apollo.Organisation = organisation
+	return apollo.store.Save(apollo.Request, apollo.Writer, session)
+}
+
 // Utility function that retrieves a full core.User object from the current session, if one exists.
 // If there is no active session, this will return core.ErrUnauthenticated
 func (apollo *Apollo) retrieveUser() (*core.User, error) {
@@ -61,7 +81,7 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 		return nil, core.ErrUnauthenticated
 	}
 
-	ID, ok := session.Values[sessionUserID].(core.UserID)
+	id, ok := session.Values[sessionUserID].(core.UserID)
 	if !ok {
 		return nil, fmt.Errorf(
 			"invalid user id stored in session: %v",
@@ -69,9 +89,9 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 		)
 	}
 
-	IsAdmin, ok := session.Values[sessionIsAdmin].(bool)
+	isAdmin, ok := session.Values[sessionIsAdmin].(bool)
 	if session.Values[sessionIsAdmin] == nil {
-		IsAdmin = false
+		isAdmin = false
 	} else if !ok {
 		return nil, fmt.Errorf(
 			"invalid user is admin stored in session: %v",
@@ -79,7 +99,7 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 		)
 	}
 
-	Name, ok := session.Values[sessionUserName].(string)
+	name, ok := session.Values[sessionUserName].(string)
 	if !ok {
 		return nil, fmt.Errorf(
 			"invalid user name stored in session: %v",
@@ -94,12 +114,12 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 			session.Values[sessionEmail],
 		)
 	}
-	Email, err := core.NewEmailAddress(emailStr)
+	email, err := core.NewEmailAddress(emailStr)
 	if err != nil {
 		return nil, fmt.Errorf("session e-mail address invalid: %w", err)
 	}
 
-	Joined, ok := session.Values[sessionJoined].(time.Time)
+	joined, ok := session.Values[sessionJoined].(time.Time)
 	if !ok {
 		return nil, fmt.Errorf(
 			"invalid joined time stored in session: %v",
@@ -108,11 +128,51 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 	}
 
 	return &core.User{
-		ID:     ID,
-		Name:   Name,
-		Email:  Email,
-		Admin:  IsAdmin,
-		Joined: Joined,
+		ID:     id,
+		Name:   name,
+		Email:  email,
+		Admin:  isAdmin,
+		Joined: joined,
+	}, nil
+}
+
+// Utility function that retrieves a full core.Organisation object from the current session, if one exists.
+// If there is no active session, this will return core.ErrUnauthenticated
+// If the active session does not have an "active organisation", this will return core.ErrNoActiveOrganisation
+func (apollo *Apollo) retrieveOrganisation() (*core.Organisation, error) {
+	session := Session(apollo.Context())
+
+	loggedIn, ok := session.Values[sessionLoggedIn].(bool)
+
+	// No user data in session
+	if !ok || !loggedIn {
+		return nil, core.ErrUnauthenticated
+	}
+
+	if session.Values[sessionOrganisationID] == nil ||
+		session.Values[sessionOrganisationName] == nil {
+		return nil, core.ErrNoActiveOrganisation
+	}
+
+	id, ok := session.Values[sessionOrganisationID].(core.OrganisationID)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid organisation id stored in session: %v",
+			session.Values[sessionOrganisationID],
+		)
+	}
+
+	name, ok := session.Values[sessionOrganisationName].(string)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid organisation name stored in session: %v",
+			session.Values[sessionOrganisationName],
+		)
+	}
+
+	return &core.Organisation{
+		ID:   id,
+		Name: name,
 	}, nil
 }
 
@@ -123,6 +183,8 @@ func (apollo *Apollo) Logout() error {
 	session.Values[sessionIsAdmin] = false
 	session.Values[sessionUserName] = ""
 	session.Values[sessionUserID] = 0
+	session.Values[sessionOrganisationName] = ""
+	session.Values[sessionOrganisationID] = 0
 	session.Values[sessionEmail] = ""
 	return session.Store().Save(apollo.Request, apollo.Writer, session)
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -16,35 +17,69 @@ import (
 )
 
 type Apollo struct {
-	Writer      http.ResponseWriter
-	Request     *http.Request
-	logger      *slog.Logger
-	layout      templ.Component
-	IsDebug     bool
-	UseSSL      bool
-	User        *core.User
-	permissions permissions.Service
-	store       sessions.Store
+	Writer       http.ResponseWriter
+	Request      *http.Request
+	logger       *slog.Logger
+	layout       templ.Component
+	IsDebug      bool
+	UseSSL       bool
+	User         *core.User
+	Organisation *core.Organisation
+	permissions  permissions.Service
+	store        sessions.Store
 }
 
 // Populate populates the Apollo object with fields that need to be retrieved after initialisation.
 // E.g. fields that are stored in the active session.
 func (apollo *Apollo) populate() {
 	if apollo.store != nil {
-		User, err := apollo.retrieveUser()
-		if err == core.ErrUnauthenticated {
-			apollo.User = nil
-		} else if err != nil {
-			slog.Error("Could not retrieve user object from session", "error", err)
-		} else {
-			apollo.User = User
-		}
+		apollo.populateUser()
+		apollo.populateOrganisation()
+
+	} else {
+		slog.Warn("No session store provided, it will not be possible to log in")
 	}
 	if apollo.permissions != nil {
 		err := permissions.RegisterApolloPermissions(apollo.permissions)
 		if err != nil {
 			slog.Error("Could not register Apollo permissions", "error", err)
 		}
+	} else {
+		slog.Warn("No permissions service provided, all permission checks will fail")
+	}
+}
+
+func (apollo *Apollo) populateUser() {
+	user, err := apollo.retrieveUser()
+	if errors.Is(err, core.ErrUnauthenticated) {
+		apollo.User = nil
+		apollo.LogField("active_user_id", slog.AnyValue(nil))
+	} else if err != nil {
+		slog.Error("Could not retrieve user object from session", "error", err)
+		err = apollo.Logout()
+		if err != nil {
+			slog.Error("Could not log out of the invalid session", "error", err)
+		}
+	} else {
+		apollo.User = user
+		apollo.LogField("active_user_id", slog.AnyValue(apollo.User.ID))
+	}
+}
+
+func (apollo *Apollo) populateOrganisation() {
+	organisation, err := apollo.retrieveOrganisation()
+	if errors.Is(err, core.ErrUnauthenticated) || errors.Is(err, core.ErrNoActiveOrganisation) {
+		apollo.Organisation = nil
+		apollo.LogField("active_organisation_id", slog.AnyValue(nil))
+	} else if err != nil {
+		slog.Error("Could not retrieve organisation object from session", "error", err)
+		err = apollo.Logout()
+		if err != nil {
+			slog.Error("Could not log out of the invalid session", "error", err)
+		}
+	} else {
+		apollo.Organisation = organisation
+		apollo.LogField("active_organisation_id", slog.AnyValue(apollo.Organisation.ID))
 	}
 }
 
@@ -80,6 +115,10 @@ func (apollo *Apollo) LogString(field string, value string) {
 }
 
 // LogField will add the specified field and its value to the current request's span
+//
+// # Example
+//
+// apollo.LogField("user_id", slog.IntValue(user.id)
 func (apollo *Apollo) LogField(field string, value slog.Value) {
 	httplog.LogEntrySetField(apollo.Context(), field, value)
 }
@@ -202,8 +241,22 @@ func (apollo *Apollo) Requires(permission permissions.Permission) error {
 	return nil
 }
 
+// RequiresStrict will return core.ErrForbidden if the current user does not have the specified permission and nil otherwise.
+// If no user is logged in at all, this will return core.ErrUnauthenticated.
+// This will use the strict permission check, which ignores global permissions and only checks the active organisation.
+func (apollo *Apollo) RequiresStrict(permission permissions.Permission) error {
+	if err := apollo.RequiresLogin(); err != nil {
+		return err
+	}
+	if !apollo.HasStrict(permission) {
+		return core.ErrForbidden
+	}
+	return nil
+}
+
 // Has returns a boolean indicating whether or not the currently logged in user has the specified permission in any
 // of their permission groups or not. If no user is logged in, this will return false.
+// If there is an active organisation set, this will recursively check the permissions in that organisation's lineage.
 func (apollo *Apollo) Has(permission permissions.Permission) bool {
 	if apollo.permissions == nil {
 		slog.Warn(
@@ -222,7 +275,67 @@ func (apollo *Apollo) Has(permission permissions.Permission) bool {
 	}
 	ok, err := apollo.permissions.HasAny(apollo.Context(), apollo.User.ID, permission)
 	if err != nil {
-		slog.Error("Error while checking permissions", "error", err)
+		slog.Error("Error while checking global permissions", "error", err)
+		return false
+	}
+	if !ok && apollo.Organisation != nil {
+		// User does not have the global permission -> check active organisation tree
+		ok, err = apollo.permissions.HasAnyForOrgTree(
+			apollo.Context(),
+			apollo.User.ID,
+			apollo.Organisation.ID,
+			permission,
+		)
+		if err != nil {
+			slog.Error(
+				"Error while checking organisation permissions",
+				"error",
+				err,
+				"organisation_id",
+				apollo.Organisation.ID,
+			)
+			return false
+		}
+	}
+	return ok
+}
+
+// HasStrict returns a boolean indicating whether or not the currently logged in user has the specified permission in
+// the currently active organisation (and only there, global permissions and parent organisations are ignored).
+// If no user is logged in or they haven't chosen an active organisation yet, this will return false.
+func (apollo *Apollo) HasStrict(permission permissions.Permission) bool {
+	if apollo.permissions == nil {
+		slog.Warn(
+			"Trying to use permission system while Apollo does not have access to a permissions.Service!",
+		)
+		return false
+	}
+	if apollo.User == nil {
+		slog.Warn(
+			"Trying to use permission system while no user is logged in!",
+		)
+		return false
+	}
+	if apollo.User.Admin {
+		return true
+	}
+	if apollo.Organisation == nil {
+		return false
+	}
+	ok, err := apollo.permissions.HasAnyForOrg(
+		apollo.Context(),
+		apollo.User.ID,
+		apollo.Organisation.ID,
+		permission,
+	)
+	if err != nil {
+		slog.Error(
+			"Error while checking organisation permissions",
+			"error",
+			err,
+			"organisation_id",
+			apollo.Organisation.ID,
+		)
 		return false
 	}
 	return ok
