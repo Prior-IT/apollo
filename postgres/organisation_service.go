@@ -83,6 +83,16 @@ func (o *OrganisationService) ListOrganisations(ctx context.Context) ([]core.Org
 	return convertOrganisationList(organisations)
 }
 
+// ListOrganisationChildren implements core.OrganisationService.ListOrganisationChildren
+func (o *OrganisationService) ListOrganisationChildren(ctx context.Context, parentID core.OrganisationID) ([]core.Organisation, error) {
+	i32ParentID := int32(parentID)
+	organisations, err := o.q.ListOrganisationChildren(ctx, &i32ParentID)
+	if err != nil {
+		return nil, convertPgError(err)
+	}
+	return convertOrganisationList(organisations)
+}
+
 // ListUsersInOrganisation implements core.OrganisationService.ListUsersInOrganisation
 func (o *OrganisationService) ListUsersInOrganisation(ctx context.Context, id core.OrganisationID) ([]core.User, error) {
 	users, err := o.q.ListUsersInOrganisation(ctx, int32(id))

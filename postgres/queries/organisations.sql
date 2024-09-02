@@ -29,6 +29,14 @@ RETURNING
 DELETE FROM apollo.organisations
 WHERE id = $1;
 
+-- name: ListOrganisationChildren :many
+SELECT
+	*
+FROM
+	apollo.organisations
+WHERE
+	parent_id = $1;
+
 -- name: ListOrganisationsForUser :many
 SELECT
     o.*

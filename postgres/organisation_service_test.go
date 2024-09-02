@@ -78,6 +78,29 @@ func TestOrganisationService(t *testing.T) {
 		assert.ErrorIs(t, err, core.ErrNotFound, "Getting an organisation with deleted parent should return ErrNotFound")
 	})
 
+	t.Run("ok: list organisation children return only own children", func(t *testing.T) {
+		org1, err := service.CreateOrganisation(ctx, tests.Faker.BS(), nil)
+		tests.Check(err)
+		org1A, err := service.CreateOrganisation(ctx, tests.Faker.BS(), &org1.ID)
+		tests.Check(err)
+		org1B, err := service.CreateOrganisation(ctx, tests.Faker.BS(), &org1.ID)
+		tests.Check(err)
+		org2, err := service.CreateOrganisation(ctx, tests.Faker.BS(), nil)
+		tests.Check(err)
+		_, err = service.CreateOrganisation(ctx, tests.Faker.BS(), &org2.ID)
+		tests.Check(err)
+
+		children, err := service.ListOrganisationChildren(ctx, org1.ID)
+		childIDs := []core.OrganisationID{}
+		for _, child := range children {
+			childIDs = append(childIDs, child.ID)
+		}
+		tests.Check(err)
+		assert.Equal(t, len(children), 2)
+		assert.Contains(t, childIDs, org1A.ID)
+		assert.Contains(t, childIDs, org1B.ID)
+	})
+
 	t.Run("ok: add user to organisation and list", func(t *testing.T) {
 		name := tests.Faker.BS()
 		organisation, err := service.CreateOrganisation(ctx, name, nil)

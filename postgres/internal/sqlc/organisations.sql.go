@@ -90,6 +90,35 @@ func (q *Queries) GetParentOrganisation(ctx context.Context, id int32) (*int32, 
 	return parent_id, err
 }
 
+const listOrganisationChildren = `-- name: ListOrganisationChildren :many
+SELECT
+	id, name, parent_id
+FROM
+	apollo.organisations
+WHERE
+	parent_id = $1
+`
+
+func (q *Queries) ListOrganisationChildren(ctx context.Context, parentID *int32) ([]ApolloOrganisation, error) {
+	rows, err := q.db.Query(ctx, listOrganisationChildren, parentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ApolloOrganisation
+	for rows.Next() {
+		var i ApolloOrganisation
+		if err := rows.Scan(&i.ID, &i.Name, &i.ParentID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listOrganisations = `-- name: ListOrganisations :many
 SELECT
     id, name, parent_id
