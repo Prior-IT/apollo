@@ -95,7 +95,7 @@ func (a *AddressService) ListAddresses(ctx context.Context) ([]core.Address, err
 }
 
 func convertAddress(address sqlc.ApolloAddress) (*core.Address, error) {
-	id, err := core.NewAddressID(uint(address.ID))
+	id, err := core.NewAddressID(address.ID)
 	if err != nil {
 		return nil, err
 	}

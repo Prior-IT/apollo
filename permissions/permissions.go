@@ -3,7 +3,8 @@ package permissions
 import (
 	"log/slog"
 	"maps"
-	"strconv"
+
+	"github.com/prior-it/apollo/core"
 )
 
 type (
@@ -14,16 +15,12 @@ func (p Permission) String() string {
 	return string(p)
 }
 
-type PermissionGroupID uint
+type PermissionGroupID core.ID
 
 type PermissionGroup struct {
 	ID          PermissionGroupID
 	Name        string
 	Permissions map[Permission]bool
-}
-
-func (id PermissionGroupID) String() string {
-	return strconv.FormatUint(uint64(id), 10)
 }
 
 func (pg *PermissionGroup) Get(permission Permission) bool {

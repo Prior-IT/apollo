@@ -21,15 +21,15 @@ type Address struct {
 }
 
 type (
-	AddressID uint
+	AddressID int32
 )
 
 func (id AddressID) String() string {
-	return strconv.FormatUint(uint64(id), 10)
+	return strconv.FormatInt(int64(id), 10)
 }
 
 // NewAddressID parses an address id from any unsigned integer.
-func NewAddressID(id uint) (AddressID, error) {
+func NewAddressID(id int32) (AddressID, error) {
 	if id == 0 {
 		return 0, errors.New("AddressID cannot be 0")
 	}
