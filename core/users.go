@@ -17,7 +17,7 @@ type User struct {
 	Joined time.Time
 }
 
-type UserID ID
+type UserID = ID
 
 /**
  * APPLICATION

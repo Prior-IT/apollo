@@ -14,7 +14,7 @@ type Organisation struct {
 	ParentID *OrganisationID
 }
 
-type OrganisationID ID
+type OrganisationID = ID
 
 /**
  * APPLICATION
