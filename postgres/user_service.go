@@ -32,7 +32,7 @@ func (u *UserService) CreateUser(
 	}
 	user, err := u.q.CreateUser(ctx, name, email.String())
 	if err != nil {
-		return nil, convertPgError(err)
+		return nil, ConvertPgError(err)
 	}
 	return convertUser(user)
 }
@@ -46,7 +46,7 @@ func (u *UserService) DeleteUser(ctx context.Context, id core.UserID) error {
 func (u *UserService) GetAmountOfUsers(ctx context.Context) (uint64, error) {
 	amount, err := u.q.GetAmountOfUsers(ctx)
 	if err != nil {
-		return 0, convertPgError(err)
+		return 0, ConvertPgError(err)
 	}
 	return uint64(amount), nil
 }
@@ -55,7 +55,7 @@ func (u *UserService) GetAmountOfUsers(ctx context.Context) (uint64, error) {
 func (u *UserService) GetUser(ctx context.Context, id core.UserID) (*core.User, error) {
 	user, err := u.q.GetUser(ctx, int32(id))
 	if err != nil {
-		return nil, convertPgError(err)
+		return nil, ConvertPgError(err)
 	}
 	return convertUser(user)
 }
@@ -64,7 +64,7 @@ func (u *UserService) GetUser(ctx context.Context, id core.UserID) (*core.User, 
 func (u *UserService) ListUsers(ctx context.Context) ([]core.User, error) {
 	users, err := u.q.ListUsers(ctx)
 	if err != nil {
-		return nil, convertPgError(err)
+		return nil, ConvertPgError(err)
 	}
 	return convertUserList(users)
 }
