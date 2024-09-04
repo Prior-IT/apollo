@@ -2,8 +2,6 @@ package core
 
 import (
 	"context"
-	"errors"
-	"strconv"
 )
 
 /**
@@ -20,21 +18,7 @@ type Address struct {
 	ExtraLine  *string
 }
 
-type (
-	AddressID uint
-)
-
-func (id AddressID) String() string {
-	return strconv.FormatUint(uint64(id), 10)
-}
-
-// NewAddressID parses an address id from any unsigned integer.
-func NewAddressID(id uint) (AddressID, error) {
-	if id == 0 {
-		return 0, errors.New("AddressID cannot be 0")
-	}
-	return AddressID(id), nil
-}
+type AddressID = ID
 
 /**
  * APPLICATION

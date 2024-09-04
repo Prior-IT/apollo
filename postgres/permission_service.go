@@ -251,10 +251,7 @@ func (p *PermissionService) HasAnyForOrgTree(
 		return false, fmt.Errorf("cannot get parent organisation id: %w", err)
 	}
 	if parentID != nil {
-		pID, err := core.NewOrganisationID(uint(*parentID))
-		if err != nil {
-			return false, err
-		}
+		pID := core.OrganisationID(*parentID)
 		return p.HasAnyForOrgTree(ctx, userID, pID, permission)
 	}
 	// If there is no more parent organisation and we haven't found it yet, return false

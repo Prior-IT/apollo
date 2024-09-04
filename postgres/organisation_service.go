@@ -127,16 +127,10 @@ func (o *OrganisationService) RemoveUser(ctx context.Context, UserID core.UserID
 }
 
 func convertOrganisation(organisation sqlc.ApolloOrganisation) (*core.Organisation, error) {
-	id, err := core.NewOrganisationID(uint(organisation.ID))
-	if err != nil {
-		return nil, err
-	}
+	id := core.OrganisationID(organisation.ID)
 	var parentID *core.OrganisationID
 	if organisation.ParentID != nil {
-		parentIDVal, err := core.NewOrganisationID(uint(*organisation.ParentID))
-		if err != nil {
-			return nil, err
-		}
+		parentIDVal := core.OrganisationID(*organisation.ParentID)
 		parentID = &parentIDVal
 	}
 	return &core.Organisation{

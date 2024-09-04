@@ -96,10 +96,7 @@ func convertUser(user sqlc.ApolloUser) (*core.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	id, err := core.NewUserID(uint(user.ID))
-	if err != nil {
-		return nil, err
-	}
+	id := core.UserID(user.ID)
 	return &core.User{
 		ID:     id,
 		Name:   user.Name,

@@ -149,7 +149,7 @@ func (apollo *Apollo) retrieveOrganisation() (*core.Organisation, error) {
 		return nil, core.ErrUnauthenticated
 	}
 
-	if session.Values[sessionOrganisationID] == nil ||
+	if session.Values[sessionOrganisationID] == nil || session.Values[sessionOrganisationID] == 0 ||
 		session.Values[sessionOrganisationName] == nil {
 		return nil, core.ErrNoActiveOrganisation
 	}
