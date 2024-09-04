@@ -65,14 +65,14 @@ func (p *PermissionService) CreatePermissionGroup(
 			return nil, fmt.Errorf(
 				"could not create a new permission group with id %v: %w",
 				Group.ID,
-				convertPgError(err),
+				ConvertPgError(err),
 			)
 		}
 
 	} else {
 		NewGroup, err = q.CreatePermissionGroup(ctx, &Group.Name)
 		if err != nil {
-			return nil, fmt.Errorf("could not create the new permission group: %w", convertPgError(err))
+			return nil, fmt.Errorf("could not create the new permission group: %w", ConvertPgError(err))
 		}
 	}
 

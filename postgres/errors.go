@@ -9,10 +9,10 @@ import (
 	"github.com/prior-it/apollo/core"
 )
 
-// convertPgError will convert known postgres errors to their core variant.
+// ConvertPgError will convert known postgres errors to their core variant.
 // Unknown or unhandled errors will be returned as-is.
 // Converting nil will simply return nil.
-func convertPgError(err error) error {
+func ConvertPgError(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {

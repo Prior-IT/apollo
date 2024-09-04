@@ -45,7 +45,7 @@ func (a *AddressService) CreateAddressTx(
 		ExtraLine:  addressCreate.ExtraLine,
 	})
 	if err != nil {
-		return nil, convertPgError(err)
+		return nil, ConvertPgError(err)
 	}
 	return convertAddress(address)
 }
@@ -59,7 +59,7 @@ func (a *AddressService) DeleteAddress(ctx context.Context, id core.AddressID) e
 func (a *AddressService) GetAddress(ctx context.Context, id core.AddressID) (*core.Address, error) {
 	address, err := a.q.GetAddress(ctx, int32(id))
 	if err != nil {
-		return nil, convertPgError(err)
+		return nil, ConvertPgError(err)
 	}
 	return convertAddress(address)
 }
@@ -89,7 +89,7 @@ func (a *AddressService) UpdateAddress(
 func (a *AddressService) ListAddresses(ctx context.Context) ([]core.Address, error) {
 	addresses, err := a.q.ListAddresses(ctx)
 	if err != nil {
-		return nil, convertPgError(err)
+		return nil, ConvertPgError(err)
 	}
 	return convertAddressList(addresses)
 }

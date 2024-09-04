@@ -46,7 +46,7 @@ func (o *OrganisationService) AddOrganisation(
 	}
 	organisation, err := queries.CreateOrganisation(ctx, name, castParentID)
 	if err != nil {
-		return nil, convertPgError(err)
+		return nil, ConvertPgError(err)
 	}
 	return convertOrganisation(organisation)
 }
@@ -60,7 +60,7 @@ func (o *OrganisationService) DeleteOrganisation(ctx context.Context, id core.Or
 func (o *OrganisationService) GetAmountOfOrganisations(ctx context.Context) (uint64, error) {
 	amount, err := o.q.GetAmountOfOrganisations(ctx)
 	if err != nil {
-		return 0, convertPgError(err)
+		return 0, ConvertPgError(err)
 	}
 	return uint64(amount), nil
 }
@@ -69,7 +69,7 @@ func (o *OrganisationService) GetAmountOfOrganisations(ctx context.Context) (uin
 func (o *OrganisationService) GetOrganisation(ctx context.Context, id core.OrganisationID) (*core.Organisation, error) {
 	organisation, err := o.q.GetOrganisation(ctx, int32(id))
 	if err != nil {
-		return nil, convertPgError(err)
+		return nil, ConvertPgError(err)
 	}
 	return convertOrganisation(organisation)
 }
@@ -78,7 +78,7 @@ func (o *OrganisationService) GetOrganisation(ctx context.Context, id core.Organ
 func (o *OrganisationService) ListOrganisations(ctx context.Context) ([]core.Organisation, error) {
 	organisations, err := o.q.ListOrganisations(ctx)
 	if err != nil {
-		return nil, convertPgError(err)
+		return nil, ConvertPgError(err)
 	}
 	return convertOrganisationList(organisations)
 }
@@ -88,7 +88,7 @@ func (o *OrganisationService) ListOrganisationChildren(ctx context.Context, pare
 	i32ParentID := int32(parentID)
 	organisations, err := o.q.ListOrganisationChildren(ctx, &i32ParentID)
 	if err != nil {
-		return nil, convertPgError(err)
+		return nil, ConvertPgError(err)
 	}
 	return convertOrganisationList(organisations)
 }
@@ -97,7 +97,7 @@ func (o *OrganisationService) ListOrganisationChildren(ctx context.Context, pare
 func (o *OrganisationService) ListUsersInOrganisation(ctx context.Context, id core.OrganisationID) ([]core.User, error) {
 	users, err := o.q.ListUsersInOrganisation(ctx, int32(id))
 	if err != nil {
-		return nil, convertPgError(err)
+		return nil, ConvertPgError(err)
 	}
 	return convertUserList(users)
 }
@@ -106,7 +106,7 @@ func (o *OrganisationService) ListUsersInOrganisation(ctx context.Context, id co
 func (o *OrganisationService) ListOrganisationsForUser(ctx context.Context, id core.UserID) ([]core.Organisation, error) {
 	organisations, err := o.q.ListOrganisationsForUser(ctx, int32(id))
 	if err != nil {
-		return nil, convertPgError(err)
+		return nil, ConvertPgError(err)
 	}
 	return convertOrganisationList(organisations)
 }
