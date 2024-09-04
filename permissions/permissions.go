@@ -15,7 +15,7 @@ func (p Permission) String() string {
 	return string(p)
 }
 
-type PermissionGroupID core.ID
+type PermissionGroupID = core.ID
 
 type PermissionGroup struct {
 	ID          PermissionGroupID
