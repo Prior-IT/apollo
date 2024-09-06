@@ -90,6 +90,22 @@ func (q *Queries) GetParentOrganisation(ctx context.Context, id int32) (*int32, 
 	return parent_id, err
 }
 
+const getUserInOrganisation = `-- name: GetUserInOrganisation :one
+SELECT
+	COUNT(id)
+FROM
+	apollo.organisation_users
+WHERE
+	user_id = $1 AND organisation_id = $2
+`
+
+func (q *Queries) GetUserInOrganisation(ctx context.Context, userID int32, organisationID int32) (int64, error) {
+	row := q.db.QueryRow(ctx, getUserInOrganisation, userID, organisationID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const listOrganisationChildren = `-- name: ListOrganisationChildren :many
 SELECT
 	id, name, parent_id

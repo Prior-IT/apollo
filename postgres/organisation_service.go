@@ -111,6 +111,15 @@ func (o *OrganisationService) ListOrganisationsForUser(ctx context.Context, id c
 	return convertOrganisationList(organisations)
 }
 
+// UserInOrganisation implements core.OrganisationService.UserInOrganisation
+func (o *OrganisationService) UserInOrganisation(ctx context.Context, UserID core.UserID, orgID core.OrganisationID) (bool, error) {
+	count, err := o.q.GetUserInOrganisation(ctx, int32(UserID), int32(orgID))
+	if err != nil {
+		return false, ConvertPgError(err)
+	}
+	return (count == 1), nil
+}
+
 // AddUser implements core.OrganisationService.AddUser
 func (o *OrganisationService) AddUser(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) error {
 	return o.AddUserTx(ctx, o.db, UserID, OrgID)

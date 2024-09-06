@@ -71,3 +71,11 @@ FROM
     apollo.organisations
 WHERE
     id = $1;
+
+-- name: GetUserInOrganisation :one
+SELECT
+	COUNT(id)
+FROM
+	apollo.organisation_users
+WHERE
+	user_id = $1 AND organisation_id = $2;
