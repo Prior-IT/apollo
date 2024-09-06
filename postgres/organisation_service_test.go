@@ -125,6 +125,11 @@ func TestOrganisationService(t *testing.T) {
 		assert.NotEmpty(t, users, "Users list shoud not be empty")
 		assert.Equal(t, users[0], *user)
 
+		// Check user is part of organisation
+		isMember, err := service.UserInOrganisation(ctx, user.ID, organisation.ID)
+		tests.Check(err)
+		assert.True(t, isMember, "User should be a member of the organisation")
+
 		// Remove user from organisation
 		tests.Check(service.RemoveUser(ctx, user.ID, organisation.ID))
 		users, err = service.ListUsersInOrganisation(ctx, organisation.ID)
