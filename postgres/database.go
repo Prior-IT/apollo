@@ -33,7 +33,7 @@ func NewDB(ctx context.Context, connString string) (*ApolloDB, error) {
 // pass on unsanitised user input!
 func (db *ApolloDB) SwitchSchema(ctx context.Context, schema string) error {
 	slog.Info("Switching postgres schema", "schema", schema)
-	if _, err := db.Exec(ctx, fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s;", schema)); err != nil {
+	if _, err := db.Exec(ctx, fmt.Sprintf("BEGIN; SELECT pg_advisory_xact_lock(1); CREATE SCHEMA IF NOT EXISTS %s; COMMIT;", schema)); err != nil {
 		return fmt.Errorf("cannot create schema '%v': %w", schema, err)
 	}
 	if _, err := db.Exec(ctx, fmt.Sprintf("SET search_path TO %s;", schema)); err != nil {
