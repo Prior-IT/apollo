@@ -77,6 +77,7 @@ func (db *ApolloDB) Migrate(folder embed.FS) error {
 		database,
 		fsys,
 		goose.WithSessionLocker(sessionLocker), // Use session-level advisory lock.
+		goose.WithVerbose(true),                // Enable logging (as with goose.Up)
 	)
 	if err != nil {
 		return fmt.Errorf("Cannot create goose provider: %w", err)
