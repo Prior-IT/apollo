@@ -4,11 +4,13 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"io/fs"
 	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
+	"github.com/pressly/goose/v3/lock"
 )
 
 //go:embed migrations/*.sql
@@ -33,7 +35,7 @@ func NewDB(ctx context.Context, connString string) (*ApolloDB, error) {
 // pass on unsanitised user input!
 func (db *ApolloDB) SwitchSchema(ctx context.Context, schema string) error {
 	slog.Info("Switching postgres schema", "schema", schema)
-	if _, err := db.Exec(ctx, fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s;", schema)); err != nil {
+	if _, err := db.Exec(ctx, fmt.Sprintf("BEGIN; SELECT pg_advisory_xact_lock(1); CREATE SCHEMA IF NOT EXISTS %s; COMMIT;", schema)); err != nil {
 		return fmt.Errorf("cannot create schema '%v': %w", schema, err)
 	}
 	if _, err := db.Exec(ctx, fmt.Sprintf("SET search_path TO %s;", schema)); err != nil {
@@ -55,15 +57,34 @@ func (db *ApolloDB) DeleteSchema(ctx context.Context, schema string) error {
 
 // Migrate the database using the specified embedded migration folder.
 func (db *ApolloDB) Migrate(folder embed.FS) error {
-	goose.SetBaseFS(folder)
-
-	if err := goose.SetDialect("postgres"); err != nil {
-		return fmt.Errorf("cannot change dialect to postgres: %w", err)
+	fsys, err := fs.Sub(folder, "migrations")
+	if err != nil {
+		return fmt.Errorf("Cannot get filesystem: %w", err)
+	}
+	sessionLocker, err := lock.NewPostgresSessionLocker(
+		// Timeout after 30min. Try every 15s up to 120 times.
+		lock.WithLockTimeout(15, 120), //nolint:mnd
+	)
+	if err != nil {
+		return fmt.Errorf("Cannot use session lock: %w", err)
 	}
 
 	database := stdlib.OpenDBFromPool(db.Pool)
 
-	if err := goose.Up(database, "migrations"); err != nil {
+	// Create custom goose provider
+	provider, err := goose.NewProvider(
+		goose.DialectPostgres,
+		database,
+		fsys,
+		goose.WithSessionLocker(sessionLocker), // Use session-level advisory lock.
+		goose.WithVerbose(true),                // Enable logging (as with goose.Up)
+	)
+	if err != nil {
+		return fmt.Errorf("Cannot create goose provider: %w", err)
+	}
+
+	_, err = provider.Up(context.Background())
+	if err != nil {
 		return fmt.Errorf("cannot run database migrations: %w", err)
 	}
 
