@@ -4,8 +4,10 @@ package components
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import "github.com/a-h/templ"
-import templruntime "github.com/a-h/templ/runtime"
+import (
+	"github.com/a-h/templ"
+	templruntime "github.com/a-h/templ/runtime"
+)
 
 type ButtonType int
 
@@ -72,7 +74,7 @@ func Button(props ButtonProps) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var2 = []any{
+		templ_7745c5c3_Var2 := []any{
 			"rounded-lg py-2 px-8 gap-2 shadow enabled:hover:shadow-sm",
 			"flex flex-row items-center justify-center",
 			"disabled:opacity-50 disabled:cursor-not-allowed",
