@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/gorilla/sessions"
+	"github.com/prior-it/apollo/config"
 	"github.com/prior-it/apollo/core"
 	"github.com/prior-it/apollo/permissions"
 	"github.com/vearutop/statigz"
@@ -30,16 +31,15 @@ type Server[state any] struct {
 	logger            *slog.Logger
 	layout            templ.Component
 	errorHandler      ErrorHandler
-	isDebug           bool
-	useSSL            bool
 	permissionService permissions.Service
 	sessionStore      sessions.Store
+	cfg               *config.Config
 }
 
 type Handler[state any] func(apollo *Apollo, state state) error
 
-// New creates a new server with the specified state object.
-func New[state any](s state) *Server[state] {
+// New creates a new server with the specified state object and configuration.
+func New[state any](s state, cfg *config.Config) *Server[state] {
 	server := &Server[state]{
 		mux:    chi.NewMux(),
 		state:  s,
@@ -50,6 +50,7 @@ func New[state any](s state) *Server[state] {
 			apollo.Error("[ERROR] Internal server error", "error", err)
 			render.PlainText(apollo.Writer, apollo.Request, "internal server error")
 		},
+		cfg: cfg,
 	}
 
 	// Attach default not found handler
@@ -90,16 +91,6 @@ func (server *Server[state]) WithDefaultLayout(layout templ.Component) *Server[s
 	return server
 }
 
-func (server *Server[state]) WithDebug(debug bool) *Server[state] {
-	server.isDebug = debug
-	return server
-}
-
-func (server *Server[state]) WithSSL(useSSL bool) *Server[state] {
-	server.useSSL = useSSL
-	return server
-}
-
 func (server *Server[state]) WithPermissionService(service permissions.Service) *Server[state] {
 	server.permissionService = service
 	return server
@@ -110,6 +101,11 @@ func (server *Server[state]) WithSessionStore(store sessions.Store) *Server[stat
 	return server
 }
 
+func (server *Server[state]) WithConfig(cfg *config.Config) *Server[state] {
+	server.cfg = cfg
+	return server
+}
+
 func (server *Server[state]) handle(handler Handler[state]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		apollo := Apollo{
@@ -117,8 +113,6 @@ func (server *Server[state]) handle(handler Handler[state]) http.HandlerFunc {
 			Request:     r,
 			logger:      server.logger,
 			layout:      server.layout,
-			IsDebug:     server.isDebug,
-			UseSSL:      server.useSSL,
 			permissions: server.permissionService,
 			store:       server.sessionStore,
 		}
@@ -151,7 +145,6 @@ func (server *Server[state]) AttachApolloMiddleware() {
 			}
 
 			ctx = context.WithValue(ctx, ctxSession, session)
-			ctx = context.WithValue(ctx, ctxDebug, server.isDebug)
 
 			loggedIn, ok := session.Values[sessionLoggedIn].(bool)
 			ctx = context.WithValue(ctx, ctxLoggedIn, ok && loggedIn)
@@ -209,7 +202,7 @@ func (server *Server[state]) Handle(pattern string, handler http.Handler) *Serve
 //
 //	server.StaticFiles("/assets/", "./static/", assetsFS)
 func (server *Server[state]) StaticFiles(pattern string, dir string, files fs.ReadDirFS) {
-	if server.isDebug && len(dir) > 0 {
+	if server.cfg.App.Debug && len(dir) > 0 {
 		server.Handle(
 			pattern+"*",
 			http.StripPrefix(pattern,
