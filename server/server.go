@@ -2,11 +2,16 @@ package server
 
 import (
 	"context"
+	"embed"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/a-h/templ"
@@ -68,6 +73,18 @@ func New[state any](s state, cfg *config.Config) *Server[state] {
 	return server
 }
 
+// Bootstrap creates a new server and initializes all default systems.
+func Bootstrap[state any](s state, cfg *config.Config, staticFS embed.FS) *Server[state] {
+	if cfg == nil {
+		panic("You need to supply a config.Config value to bootstrap a new server")
+	}
+	server := New(s, cfg)
+	server.AttachDefaultMiddleware()
+	server.StaticFiles("/static", "static", staticFS)
+
+	return server
+}
+
 func (server *Server[state]) WithErrorHandler(errorHandler ErrorHandler) *Server[state] {
 	server.errorHandler = errorHandler
 	return server
@@ -125,10 +142,41 @@ func (server *Server[state]) handle(handler Handler[state]) http.HandlerFunc {
 	}
 }
 
-// Attach the Apollo middleware.
-// Call this right after configuring the server but before adding routes.
-func (server *Server[state]) AttachApolloMiddleware() {
-	middleware := func(next http.Handler) http.Handler {
+func (server *Server[state]) AttachDefaultMiddleware() {
+	server.Use(
+		middleware.StripSlashes,
+		middleware.Recoverer,
+		middleware.RealIP,
+		middleware.RequestID,
+		// @TODO: Add logger
+		// @TODO: Add gzip
+		middleware.Timeout(30*time.Second), // @TODO: Get value from config
+		// @TODO: Cookie store
+		// @TODO: Load session
+		// @TODO: Page caching
+		// @TODO: Csrf
+		server.ContextMiddleware(),
+	)
+}
+
+// ContextMiddleware enriches the request context.
+// You should always attach this before adding routes in order to use Apollo effectively.
+func (server *Server[state]) ContextMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			ctx = context.WithValue(ctx, ctxConfig, server.cfg)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// SessionMiddleware returns the Apollo session middleware.
+// Attach this before adding routes, if you want to use sessions.
+func (server *Server[state]) SessionMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
 		if server.sessionStore == nil {
 			panic("You need to configure the session store before attaching Apollo middleware")
 		}
@@ -165,7 +213,40 @@ func (server *Server[state]) AttachApolloMiddleware() {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-	server.mux.Use(middleware)
+}
+
+func (server *Server[state]) Start(ctx context.Context) error {
+	// Handle OS signals to cancel the context
+	ctxServer, cancelServer := context.WithCancel(ctx)
+	go func() {
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+		<-sigs
+		cancelServer()
+	}()
+
+	// Run the actual server
+	errServer := func() error {
+		host := fmt.Sprintf("%v:%v", server.cfg.App.Host, server.cfg.App.Port)
+		slog.Info("Server started", "url", server.cfg.BaseURL(), "host", host)
+		err := http.ListenAndServe(host, server)
+
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+		return nil
+	}()
+
+	<-ctxServer.Done()
+
+	slog.Info("Shutting down gracefully...")
+	// @TODO: Clean up any leftover resources
+
+	// ctxShutdown, cancelShutdown := context.WithTimeout(ctx, 5*time.Second)
+	// defer cancelShutdown()
+
+	slog.Info("Server shut down")
+	return errServer
 }
 
 // ServeHTTP implements [net/http.Handler].
@@ -254,5 +335,16 @@ func (server *Server[state]) Delete(
 	handlerFn func(apollo *Apollo, state state) error,
 ) *Server[state] {
 	server.mux.Delete(pattern, server.handle(handlerFn))
+	return server
+}
+
+// Page adds the route `pattern` that matches a GET http method to render the specified templ component in the default layout.
+func (server *Server[state]) Page(
+	pattern string,
+	component templ.Component,
+) *Server[state] {
+	server.mux.Get(pattern, server.handle(func(apollo *Apollo, _ state) error {
+		return apollo.RenderPage(component)
+	}))
 	return server
 }
