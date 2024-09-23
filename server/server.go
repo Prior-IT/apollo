@@ -150,7 +150,9 @@ func (server *Server[state]) AttachDefaultMiddleware() {
 		middleware.RequestID,
 		// @TODO: Add logger
 		// @TODO: Add gzip
-		middleware.Timeout(30*time.Second), // @TODO: Get value from config
+		middleware.Timeout(
+			time.Duration(server.cfg.App.RequestTimeout)*time.Second,
+		), // @TODO: Get value from config
 		// @TODO: Cookie store
 		// @TODO: Load session
 		// @TODO: Page caching

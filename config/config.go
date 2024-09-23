@@ -60,15 +60,16 @@ type Config struct {
 }
 
 type AppConfig struct {
-	Debug     bool
-	SSL       bool   `default:"true"`
-	Port      uint32 `default:"3000"`
-	ProxyPort uint32
-	Host      string
-	URL       string
-	Name      string
-	Env       AppEnv `default:"prod"`
-	Version   string
+	Debug          bool
+	SSL            bool   `default:"true"`
+	Port           uint32 `default:"3000"`
+	ProxyPort      uint32
+	Host           string
+	URL            string
+	Name           string
+	Env            AppEnv `default:"prod"`
+	Version        string
+	RequestTimeout uint32 `default:"30"   mapstructure:"REQTIMEOUT"` // in seconds
 }
 
 type DatabaseConfig struct {
