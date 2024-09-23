@@ -10,18 +10,19 @@ import (
 	"strings"
 
 	"github.com/go-chi/render"
+	"github.com/prior-it/apollo/config"
 	"github.com/prior-it/apollo/login"
 )
 
 func NewLoginService(
-	providers map[string]ProviderConfig,
+	providers map[string]config.OauthProviderConfig,
 ) *LoginService {
 	return &LoginService{providers}
 }
 
 // Postgres implementation of the core LoginService interface.
 type LoginService struct {
-	providers map[string]ProviderConfig
+	providers map[string]config.OauthProviderConfig
 }
 
 // Force struct to implement the core interface
@@ -45,11 +46,11 @@ func (s *LoginService) GetLoginRedirectURL(provider string, callbackURL string) 
 	data := url.Values{}
 	data.Set("client_id", config.ID)
 	data.Set("redirect_uri", callbackURL)
-	data.Set("scope", config.Scope)
+	data.Set("scope", strings.Join(config.Scope, ","))
 	data.Set("response_type", "code")
 	url := fmt.Sprintf(
 		"%s?%s",
-		config.LoginURL,
+		config.AuthURL,
 		data.Encode(),
 	)
 
