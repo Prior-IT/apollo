@@ -1,10 +1,10 @@
 # Apollo Web Library
 
 This is the internal Prior-IT full-stack web library code-named "Apollo".
-It is open-sourced, primarily to make our own dev-flow easier, but external pull requests are welcome.
+It is primarily open-sourced to make our own dev-flow easier, but external pull requests are still welcome.
 The focus of Apollo is to allow developers to very quickly iterate and test out new ideas without having
 to worry too much about dependencies or making things work together. Apollo contains everything you need out-of-the-box
-and has bootstrapping and utility functions to combine it all together.
+for a web server and has bootstrapping / utility functions to combine it all together.
 
 You can get started by downloading the project, installing dependencies, and running the documentation server:
 ```bash
