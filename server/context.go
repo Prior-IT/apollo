@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/sessions"
+	"github.com/prior-it/apollo/config"
 	"github.com/prior-it/apollo/core"
 )
 
@@ -14,7 +15,7 @@ const (
 	ctxOrganisationID
 	ctxOrganisationName
 	ctxSession
-	ctxDebug
+	ctxConfig
 	ctxIsAdmin
 )
 
@@ -51,6 +52,6 @@ func Session(ctx context.Context) *sessions.Session {
 	return ctx.Value(ctxSession).(*sessions.Session)
 }
 
-func Debug(ctx context.Context) bool {
-	return ctx.Value(ctxDebug).(bool)
+func Config(ctx context.Context) *config.Config {
+	return ctx.Value(ctxConfig).(*config.Config)
 }

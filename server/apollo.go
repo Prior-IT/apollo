@@ -177,6 +177,12 @@ func (apollo *Apollo) ParseBody(v interface{}) error {
 	return render.DecodeForm(apollo.Request.Body, v)
 }
 
+// FormValue returns the first value for the named component of the POST, PUT, or PATCH request body.
+// URL query parameters are ignored. This ignores any errors, if the key is not present, FormValue returns the empty string.
+func (apollo *Apollo) FormValue(key string) string {
+	return apollo.Request.PostFormValue(key)
+}
+
 // GetQuery returns the first value associated with the given query parameter in the request url.
 // If there are no values set for the query param, this returns the empty string.
 // This silently discards malformed value pairs. To check query errors use [Request().ParseQuery].

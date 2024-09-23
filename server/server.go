@@ -2,11 +2,16 @@ package server
 
 import (
 	"context"
+	"embed"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/a-h/templ"
@@ -14,6 +19,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/gorilla/sessions"
+	"github.com/prior-it/apollo/config"
 	"github.com/prior-it/apollo/core"
 	"github.com/prior-it/apollo/permissions"
 	"github.com/vearutop/statigz"
@@ -30,16 +36,15 @@ type Server[state any] struct {
 	logger            *slog.Logger
 	layout            templ.Component
 	errorHandler      ErrorHandler
-	isDebug           bool
-	useSSL            bool
 	permissionService permissions.Service
 	sessionStore      sessions.Store
+	cfg               *config.Config
 }
 
 type Handler[state any] func(apollo *Apollo, state state) error
 
-// New creates a new server with the specified state object.
-func New[state any](s state) *Server[state] {
+// New creates a new server with the specified state object and configuration.
+func New[state any](s state, cfg *config.Config) *Server[state] {
 	server := &Server[state]{
 		mux:    chi.NewMux(),
 		state:  s,
@@ -50,6 +55,7 @@ func New[state any](s state) *Server[state] {
 			apollo.Error("[ERROR] Internal server error", "error", err)
 			render.PlainText(apollo.Writer, apollo.Request, "internal server error")
 		},
+		cfg: cfg,
 	}
 
 	// Attach default not found handler
@@ -63,6 +69,18 @@ func New[state any](s state) *Server[state] {
 			)
 		},
 	)
+
+	return server
+}
+
+// Bootstrap creates a new server and initializes all default systems.
+func Bootstrap[state any](s state, cfg *config.Config, staticFS embed.FS) *Server[state] {
+	if cfg == nil {
+		panic("You need to supply a config.Config value to bootstrap a new server")
+	}
+	server := New(s, cfg)
+	server.AttachDefaultMiddleware()
+	server.StaticFiles("/static", "static", staticFS)
 
 	return server
 }
@@ -90,16 +108,6 @@ func (server *Server[state]) WithDefaultLayout(layout templ.Component) *Server[s
 	return server
 }
 
-func (server *Server[state]) WithDebug(debug bool) *Server[state] {
-	server.isDebug = debug
-	return server
-}
-
-func (server *Server[state]) WithSSL(useSSL bool) *Server[state] {
-	server.useSSL = useSSL
-	return server
-}
-
 func (server *Server[state]) WithPermissionService(service permissions.Service) *Server[state] {
 	server.permissionService = service
 	return server
@@ -110,6 +118,11 @@ func (server *Server[state]) WithSessionStore(store sessions.Store) *Server[stat
 	return server
 }
 
+func (server *Server[state]) WithConfig(cfg *config.Config) *Server[state] {
+	server.cfg = cfg
+	return server
+}
+
 func (server *Server[state]) handle(handler Handler[state]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		apollo := Apollo{
@@ -117,8 +130,6 @@ func (server *Server[state]) handle(handler Handler[state]) http.HandlerFunc {
 			Request:     r,
 			logger:      server.logger,
 			layout:      server.layout,
-			IsDebug:     server.isDebug,
-			UseSSL:      server.useSSL,
 			permissions: server.permissionService,
 			store:       server.sessionStore,
 		}
@@ -131,10 +142,43 @@ func (server *Server[state]) handle(handler Handler[state]) http.HandlerFunc {
 	}
 }
 
-// Attach the Apollo middleware.
-// Call this right after configuring the server but before adding routes.
-func (server *Server[state]) AttachApolloMiddleware() {
-	middleware := func(next http.Handler) http.Handler {
+func (server *Server[state]) AttachDefaultMiddleware() {
+	server.Use(
+		middleware.StripSlashes,
+		middleware.Recoverer,
+		middleware.RealIP,
+		middleware.RequestID,
+		// @TODO: Add logger
+		// @TODO: Add gzip
+		middleware.Timeout(
+			time.Duration(server.cfg.App.RequestTimeout)*time.Second,
+		), // @TODO: Get value from config
+		// @TODO: Cookie store
+		// @TODO: Load session
+		// @TODO: Page caching
+		// @TODO: Csrf
+		server.ContextMiddleware(),
+	)
+}
+
+// ContextMiddleware enriches the request context.
+// You should always attach this before adding routes in order to use Apollo effectively.
+func (server *Server[state]) ContextMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			ctx = context.WithValue(ctx, ctxConfig, server.cfg)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// SessionMiddleware returns the Apollo session middleware.
+// Attach this before adding routes, if you want to use sessions.
+func (server *Server[state]) SessionMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
 		if server.sessionStore == nil {
 			panic("You need to configure the session store before attaching Apollo middleware")
 		}
@@ -151,7 +195,6 @@ func (server *Server[state]) AttachApolloMiddleware() {
 			}
 
 			ctx = context.WithValue(ctx, ctxSession, session)
-			ctx = context.WithValue(ctx, ctxDebug, server.isDebug)
 
 			loggedIn, ok := session.Values[sessionLoggedIn].(bool)
 			ctx = context.WithValue(ctx, ctxLoggedIn, ok && loggedIn)
@@ -172,7 +215,40 @@ func (server *Server[state]) AttachApolloMiddleware() {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-	server.mux.Use(middleware)
+}
+
+func (server *Server[state]) Start(ctx context.Context) error {
+	// Handle OS signals to cancel the context
+	ctxServer, cancelServer := context.WithCancel(ctx)
+	go func() {
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+		<-sigs
+		cancelServer()
+	}()
+
+	// Run the actual server
+	errServer := func() error {
+		host := fmt.Sprintf("%v:%v", server.cfg.App.Host, server.cfg.App.Port)
+		slog.Info("Server started", "url", server.cfg.BaseURL(), "host", host)
+		err := http.ListenAndServe(host, server)
+
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+		return nil
+	}()
+
+	<-ctxServer.Done()
+
+	slog.Info("Shutting down gracefully...")
+	// @TODO: Clean up any leftover resources
+
+	// ctxShutdown, cancelShutdown := context.WithTimeout(ctx, 5*time.Second)
+	// defer cancelShutdown()
+
+	slog.Info("Server shut down")
+	return errServer
 }
 
 // ServeHTTP implements [net/http.Handler].
@@ -209,7 +285,7 @@ func (server *Server[state]) Handle(pattern string, handler http.Handler) *Serve
 //
 //	server.StaticFiles("/assets/", "./static/", assetsFS)
 func (server *Server[state]) StaticFiles(pattern string, dir string, files fs.ReadDirFS) {
-	if server.isDebug && len(dir) > 0 {
+	if server.cfg.App.Debug && len(dir) > 0 {
 		server.Handle(
 			pattern+"*",
 			http.StripPrefix(pattern,
@@ -261,5 +337,16 @@ func (server *Server[state]) Delete(
 	handlerFn func(apollo *Apollo, state state) error,
 ) *Server[state] {
 	server.mux.Delete(pattern, server.handle(handlerFn))
+	return server
+}
+
+// Page adds the route `pattern` that matches a GET http method to render the specified templ component in the default layout.
+func (server *Server[state]) Page(
+	pattern string,
+	component templ.Component,
+) *Server[state] {
+	server.mux.Get(pattern, server.handle(func(apollo *Apollo, _ state) error {
+		return apollo.RenderPage(component)
+	}))
 	return server
 }
