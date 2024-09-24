@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"net"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -74,13 +74,16 @@ func New[state any](s state, cfg *config.Config) *Server[state] {
 }
 
 // Bootstrap creates a new server and initializes all default systems.
+// This will serve all application static files included in staticFS under the /static url.
 func Bootstrap[state any](s state, cfg *config.Config, staticFS embed.FS) *Server[state] {
 	if cfg == nil {
 		panic("You need to supply a config.Config value to bootstrap a new server")
 	}
 	server := New(s, cfg)
 	server.AttachDefaultMiddleware()
-	server.StaticFiles("/static", "static", staticFS)
+
+	// @TODO: We cannot currently host apollo static files because of an import cycle with the components module
+	// @TODO: Static files call was removed to make it possible to attach custom middleware first (since that is currently still necessary in complex apps)
 
 	return server
 }
@@ -153,9 +156,9 @@ func (server *Server[state]) AttachDefaultMiddleware() {
 		// @TODO: Add gzip
 		middleware.Timeout(
 			time.Duration(server.cfg.App.RequestTimeout)*time.Second,
-		), // @TODO: Get value from config
+		),
 		// @TODO: Cookie store
-		// @TODO: Load session
+		// @TODO: Session middleware
 		// @TODO: Page caching
 		// @TODO: Csrf
 		server.ContextMiddleware(),
@@ -218,21 +221,26 @@ func (server *Server[state]) SessionMiddleware() func(http.Handler) http.Handler
 	}
 }
 
-func (server *Server[state]) Start(ctx context.Context) error {
+// Start a new goroutine that runs the server.
+// If no listener is provided, a new TCP listener will be created on the configured host and port.
+func (server *Server[state]) Start(ctx context.Context, listener *net.Listener) error {
 	// Handle OS signals to cancel the context
-	ctxServer, cancelServer := context.WithCancel(ctx)
-	go func() {
-		sigs := make(chan os.Signal, 1)
-		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-		<-sigs
-		cancelServer()
-	}()
+	ctxServer, cancelServer := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer cancelServer()
 
 	// Run the actual server
 	errServer := func() error {
 		host := fmt.Sprintf("%v:%v", server.cfg.App.Host, server.cfg.App.Port)
-		slog.Info("Server started", "url", server.cfg.BaseURL(), "host", host)
-		err := http.ListenAndServe(host, server)
+		if listener != nil {
+			host = (*listener).Addr().String()
+		}
+		slog.Info("Starting server", "url", server.cfg.BaseURL(), "host", host)
+		var err error
+		if listener != nil {
+			err = http.Serve(*listener, server)
+		} else {
+			err = http.ListenAndServe(host, server)
+		}
 
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			return err
@@ -242,13 +250,11 @@ func (server *Server[state]) Start(ctx context.Context) error {
 
 	<-ctxServer.Done()
 
-	slog.Info("Shutting down gracefully...")
 	// @TODO: Clean up any leftover resources
 
 	// ctxShutdown, cancelShutdown := context.WithTimeout(ctx, 5*time.Second)
 	// defer cancelShutdown()
 
-	slog.Info("Server shut down")
 	return errServer
 }
 
