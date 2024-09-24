@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"embed"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -74,8 +73,7 @@ func New[state any](s state, cfg *config.Config) *Server[state] {
 }
 
 // Bootstrap creates a new server and initializes all default systems.
-// This will serve all application static files included in staticFS under the /static url.
-func Bootstrap[state any](s state, cfg *config.Config, staticFS embed.FS) *Server[state] {
+func Bootstrap[state any](s state, cfg *config.Config) *Server[state] {
 	if cfg == nil {
 		panic("You need to supply a config.Config value to bootstrap a new server")
 	}
