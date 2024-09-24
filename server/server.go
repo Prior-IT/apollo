@@ -132,6 +132,7 @@ func (server *Server[state]) handle(handler Handler[state]) http.HandlerFunc {
 			layout:      server.layout,
 			permissions: server.permissionService,
 			store:       server.sessionStore,
+			Cfg:         server.cfg,
 		}
 		apollo.populate()
 		err := handler(&apollo, server.state)
