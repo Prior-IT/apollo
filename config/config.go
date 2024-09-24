@@ -49,27 +49,40 @@ type AppEnv string
 
 const (
 	AppEnvDev        AppEnv = "dev"
-	AppEnvProduction AppEnv = "prod"
+	AppEnvProduction AppEnv = "production"
 )
 
 type Config struct {
 	App            AppConfig
+	Sentry         SentryConfig
 	Database       DatabaseConfig
 	Log            LogConfig
 	OAuthProviders map[string]OauthProviderConfig `mapstructure:"OAUTH"`
 }
 
 type AppConfig struct {
-	Debug          bool
-	SSL            bool   `default:"true"`
-	Port           uint32 `default:"3000"`
-	ProxyPort      uint32
-	Host           string
-	URL            string
-	Name           string
-	Env            AppEnv `default:"prod"`
-	Version        string
-	RequestTimeout uint32 `default:"30"   mapstructure:"REQTIMEOUT"` // in seconds
+	Debug                  bool
+	SSL                    bool   `default:"true"`
+	Port                   uint32 `default:"3000"`
+	ProxyPort              uint32
+	Host                   string
+	URL                    string
+	Name                   string
+	Env                    AppEnv `default:"prod"`
+	Version                string
+	RequestTimeout         uint32 `default:"30"` // in seconds
+	AuthenticationKey      string `mapstructure:"AUTHKEY"`
+	EncryptionKey          string `mapstructure:"ENCKEY"`
+	DefaultPermissionGroup int    `mapstructure:"DEFAULTPERMGROUP"`
+}
+
+type SentryConfig struct {
+	Enabled      bool
+	DSN          string
+	SampleRate   float64
+	TracesRate   float64
+	ProfilesRate float64
+	ReplayRate   float64
 }
 
 type DatabaseConfig struct {
