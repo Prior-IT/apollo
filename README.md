@@ -6,6 +6,8 @@ The focus of Apollo is to allow developers to very quickly iterate and test out 
 to worry too much about dependencies or making things work together. Apollo contains everything you need out-of-the-box
 for a web server and has bootstrapping / utility functions to combine it all together.
 
+Apollo is currently in development, expect frequent breaking changes.
+
 You can get started by downloading the project, installing dependencies, and running the documentation server:
 ```bash
 git clone git@github.com:Prior-IT/apollo.git
