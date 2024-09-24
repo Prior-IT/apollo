@@ -32,7 +32,7 @@ func (apollo *Apollo) Login(user *core.User) error {
 		panic("you need to specify a session store before logging in")
 	}
 	session := Session(apollo.Context())
-	if apollo.IsDebug {
+	if apollo.Cfg.App.Debug {
 		session.Options.Secure = true
 		session.Options.HttpOnly = true
 		session.Options.SameSite = http.SameSiteStrictMode

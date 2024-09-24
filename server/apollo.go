@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/httplog/v2"
 	"github.com/go-chi/render"
 	"github.com/gorilla/sessions"
+	"github.com/prior-it/apollo/config"
 	"github.com/prior-it/apollo/core"
 	"github.com/prior-it/apollo/permissions"
 )
@@ -21,9 +22,8 @@ type Apollo struct {
 	Request      *http.Request
 	logger       *slog.Logger
 	layout       templ.Component
-	IsDebug      bool
-	UseSSL       bool
 	User         *core.User
+	Cfg          *config.Config
 	Organisation *core.Organisation
 	permissions  permissions.Service
 	store        sessions.Store
@@ -205,7 +205,7 @@ func (apollo *Apollo) AddHeader(header string, value string) {
 
 // Protocol returns the currently used protocol (either "http://" or "https://")
 func (apollo *Apollo) Protocol() string {
-	if apollo.UseSSL {
+	if apollo.Cfg.App.SSL {
 		return "https://"
 	}
 	return "http://"
