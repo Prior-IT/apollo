@@ -3,6 +3,42 @@
 @tailwind utilities;
 
 @layer base {
+	:root {
+		--primary-light: #DF504B;
+		--primary: #AD2831;
+		--primary-dark: #800E13;
+
+		--accent-light: #E9F0FA;
+		--accent: #245ED6;
+		--accent-dark: #0D41AA;
+
+		--body: #181D27;
+		--background: #F4F3F1;
+		--section: #FFFFFF;
+		--border: #CBD5E1;
+
+		--danger: #DC2626;
+		--success: #1EA97C;
+		--warning: #CC8925;
+
+		--radius: 0.5rem;
+	}
+
+	.dark,
+	:root[class~="dark"] {
+		--body: #FFFFFF;
+		--background: #0C0B0E;
+		--section: #000000;
+		--border: #452B1E;
+	}
+
+	* {
+		@apply border-border;
+	}
+
+	body {
+		@apply bg-background text-body;
+	}
 
 	a[hx-get],
 	a[hx-post] {
