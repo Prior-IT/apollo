@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/a-h/templ"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
@@ -21,6 +22,7 @@ import (
 	"github.com/prior-it/apollo/config"
 	"github.com/prior-it/apollo/core"
 	"github.com/prior-it/apollo/permissions"
+	apollomw "github.com/prior-it/apollo/server/middleware"
 	"github.com/vearutop/statigz"
 )
 
@@ -29,7 +31,11 @@ type (
 	NotFoundHandler func(apollo *Apollo)
 )
 
-type Server[state any] struct {
+type State interface {
+	Close()
+}
+
+type Server[state State] struct {
 	mux               *chi.Mux
 	state             state
 	logger            *slog.Logger
@@ -43,7 +49,7 @@ type Server[state any] struct {
 type Handler[state any] func(apollo *Apollo, state state) error
 
 // New creates a new server with the specified state object and configuration.
-func New[state any](s state, cfg *config.Config) *Server[state] {
+func New[state State](s state, cfg *config.Config) *Server[state] {
 	server := &Server[state]{
 		mux:    chi.NewMux(),
 		state:  s,
@@ -68,20 +74,6 @@ func New[state any](s state, cfg *config.Config) *Server[state] {
 			)
 		},
 	)
-
-	return server
-}
-
-// Bootstrap creates a new server and initializes all default systems.
-func Bootstrap[state any](s state, cfg *config.Config) *Server[state] {
-	if cfg == nil {
-		panic("You need to supply a config.Config value to bootstrap a new server")
-	}
-	server := New(s, cfg)
-	server.AttachDefaultMiddleware()
-
-	// @TODO: We cannot currently host apollo static files because of an import cycle with the components module
-	// @TODO: Static files call was removed to make it possible to attach custom middleware first (since that is currently still necessary in complex apps)
 
 	return server
 }
@@ -150,13 +142,14 @@ func (server *Server[state]) AttachDefaultMiddleware() {
 		middleware.Recoverer,
 		middleware.RealIP,
 		middleware.RequestID,
-		// @TODO: Add logger
+		apollomw.HTTPLogger(server.cfg),
+
 		// @TODO: Add gzip
 		middleware.Timeout(
 			time.Duration(server.cfg.App.RequestTimeout)*time.Second,
 		),
 		// @TODO: Cookie store
-		// @TODO: Session middleware
+		server.SessionMiddleware(),
 		// @TODO: Page caching
 		// @TODO: Csrf
 		server.ContextMiddleware(),
@@ -177,9 +170,19 @@ func (server *Server[state]) ContextMiddleware() func(http.Handler) http.Handler
 	}
 }
 
+func noop(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+	})
+}
+
 // SessionMiddleware returns the Apollo session middleware.
 // Attach this before adding routes, if you want to use sessions.
 func (server *Server[state]) SessionMiddleware() func(http.Handler) http.Handler {
+	if server.sessionStore == nil {
+		slog.Warn("Not enabling the SessionMiddleware since there is no SessionStore configured")
+		return noop
+	}
 	return func(next http.Handler) http.Handler {
 		if server.sessionStore == nil {
 			panic("You need to configure the session store before attaching Apollo middleware")
@@ -248,12 +251,20 @@ func (server *Server[state]) Start(ctx context.Context, listener *net.Listener) 
 
 	<-ctxServer.Done()
 
-	// @TODO: Clean up any leftover resources
+	ctxShutdown, cancelShutdown := context.WithTimeout(ctx, 5*time.Second) //nolint:mnd
+	defer cancelShutdown()
 
-	// ctxShutdown, cancelShutdown := context.WithTimeout(ctx, 5*time.Second)
-	// defer cancelShutdown()
+	go server.Shutdown(ctxShutdown)
+
+	<-ctxShutdown.Done()
 
 	return errServer
+}
+
+// Shutdown will gracefully release all server resources. You generally don't need to call this manually.
+func (server *Server[state]) Shutdown(_ context.Context) {
+	sentry.Flush(4 * time.Second) //nolint:mnd
+	server.state.Close()
 }
 
 // ServeHTTP implements [net/http.Handler].
