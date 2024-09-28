@@ -63,6 +63,7 @@ templ Button(props ButtonProps) {
 			templ.KV("inline-block", !props.Block),
 		}
 		if len(props.HxGet) > 0 {
+			hx-disabled-elt="this"
 			hx-get={ props.HxGet }
 		}
 		if props.Link {
