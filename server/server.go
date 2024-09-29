@@ -352,6 +352,25 @@ func (server *Server[state]) StaticFiles(pattern string, dir string, files fs.Re
 	}
 }
 
+// Group attaches another Handler or Router as a subrouter along a routing
+// path. It's very useful to split up a large API as many independent routers and
+// compose them as a single service. Or to attach an additional set of middleware
+// along a group of endpoints, e.g. a subtree of authenticated endpoints.
+//
+// Note that Group() does NOT return the original server but rather
+// a subroute server that only serves routes along the specified Group pattern.
+// This simply sets a wildcard along the `pattern` that will continue
+// routing at return subroute server. As a result, if you define two Group() routes on
+// the exact same pattern, the second group will panic.
+func (server *Server[state]) Group(
+	pattern string,
+) *Server[state] {
+	srv := Server[state](*server) //nolint:unconvert // shallow copy
+	srv.mux = chi.NewMux()
+	server.mux.Mount(pattern, srv.mux)
+	return &srv
+}
+
 // Get adds the route `pattern` that matches a GET http method to execute the `handlerFn` HandlerFunc.
 func (server *Server[state]) Get(
 	pattern string,

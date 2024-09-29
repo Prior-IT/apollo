@@ -35,10 +35,10 @@ func (apollo *Apollo) populate() {
 	if apollo.store != nil {
 		apollo.populateUser()
 		apollo.populateOrganisation()
-
 	} else {
 		slog.Warn("No session store provided, it will not be possible to log in")
 	}
+
 	if apollo.permissions != nil {
 		err := permissions.RegisterApolloPermissions(apollo.permissions)
 		if err != nil {
