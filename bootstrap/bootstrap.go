@@ -45,7 +45,7 @@ func Minimal[state server.State](
 	s := server.New(stt, cfg)
 	s.AttachDefaultMiddleware()
 
-	s.Use(middlewares...)
+	s.UseStd(middlewares...)
 
 	s.StaticFiles("/static", "static", staticFS)
 	s.StaticFiles(
@@ -103,15 +103,15 @@ func Full[state BootstrappedState[state]](
 			WaitForDelivery: true,
 			Timeout:         5 * time.Second, //nolint:mnd
 		})
-		s.Use(sentryHandler.Handle)
+		s.UseStd(sentryHandler.Handle)
 	}
 
 	// Fully disable caching in debug mode
 	if cfg.App.Debug {
-		s.Use(middleware.NoCache)
+		s.UseStd(middleware.NoCache)
 	}
 
-	s.Use(middlewares...)
+	s.UseStd(middlewares...)
 
 	s.StaticFiles("/static", "static", staticFS)
 	s.StaticFiles(

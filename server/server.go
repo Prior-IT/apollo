@@ -46,7 +46,10 @@ type Server[state State] struct {
 	cfg               *config.Config
 }
 
-type Handler[state any] func(apollo *Apollo, state state) error
+type (
+	Handler[state any]    func(apollo *Apollo, state state) error
+	Middleware[state any] func(apollo *Apollo, state state) (context.Context, error)
+)
 
 // New creates a new server with the specified state object and configuration.
 func New[state State](s state, cfg *config.Config) *Server[state] {
@@ -116,28 +119,49 @@ func (server *Server[state]) WithConfig(cfg *config.Config) *Server[state] {
 	return server
 }
 
+func (server *Server[state]) NewApollo(w http.ResponseWriter, r *http.Request) *Apollo {
+	apollo := Apollo{
+		Writer:      w,
+		Request:     r,
+		logger:      server.logger,
+		layout:      server.layout,
+		permissions: server.permissionService,
+		store:       server.sessionStore,
+		Cfg:         server.cfg,
+	}
+	apollo.populate()
+	return &apollo
+}
+
 func (server *Server[state]) handle(handler Handler[state]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		apollo := Apollo{
-			Writer:      w,
-			Request:     r,
-			logger:      server.logger,
-			layout:      server.layout,
-			permissions: server.permissionService,
-			store:       server.sessionStore,
-			Cfg:         server.cfg,
-		}
-		apollo.populate()
-		err := handler(&apollo, server.state)
+		apollo := server.NewApollo(w, r)
+		err := handler(apollo, server.state)
 		if err != nil {
-			server.errorHandler(&apollo, err)
+			server.errorHandler(apollo, err)
 		}
 		_ = r.Body.Close()
 	}
 }
 
+func (server *Server[state]) handleMiddleware(
+	middleware Middleware[state],
+) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			appolo := server.NewApollo(w, r)
+			ctx, err := middleware(appolo, server.state)
+			if err != nil {
+				server.errorHandler(appolo, err)
+			} else {
+				next.ServeHTTP(w, r.WithContext(ctx))
+			}
+		})
+	}
+}
+
 func (server *Server[state]) AttachDefaultMiddleware() {
-	server.Use(
+	server.UseStd(
 		middleware.StripSlashes,
 		middleware.Recoverer,
 		middleware.RealIP,
@@ -272,14 +296,29 @@ func (server *Server[state]) ServeHTTP(writer http.ResponseWriter, request *http
 	server.mux.ServeHTTP(writer, request)
 }
 
-// Use appends a middleware handler to the middleware stack.
+// UseStd appends a stdlib middleware handler to the middleware stack.
 //
 // The middleware stack for any server will execute before searching for a matching
 // route to a specific handler, which provides opportunity to respond early,
 // change the course of the request execution, or set request-scoped values for
 // the next Handler.
-func (server *Server[state]) Use(middlewares ...func(http.Handler) http.Handler) *Server[state] {
+func (server *Server[state]) UseStd(middlewares ...func(http.Handler) http.Handler) *Server[state] {
 	server.mux.Use(middlewares...)
+	return server
+}
+
+// Use appends an Apollo middleware handler to the middleware stack.
+//
+// The middleware stack for any server will execute before searching for a matching
+// route to a specific handler, which provides opportunity to respond early,
+// change the course of the request execution, or set request-scoped values for
+// the next Handler.
+func (server *Server[state]) Use(
+	middlewares ...Middleware[state],
+) *Server[state] {
+	for _, mi := range middlewares {
+		server.mux.Use(server.handleMiddleware(mi))
+	}
 	return server
 }
 
