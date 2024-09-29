@@ -350,12 +350,18 @@ func (apollo *Apollo) HasStrict(permission permissions.Permission) bool {
 // Redirect will return a response that redirects the user to the specified url.
 // If HTMX is available, this will redirect using HTMX.
 func (apollo *Apollo) Redirect(url string) {
+	apollo.RedirectWithCode(url, http.StatusSeeOther)
+}
+
+// Redirect will return a response that redirects the user to the specified url with the specified status code.
+// If HTMX is available, this will redirect using HTMX with status code 200 (so that HTMX would be triggered).
+func (apollo *Apollo) RedirectWithCode(url string, statusCode int) {
 	if apollo.GetHeader("HX-Request") == "true" {
 		apollo.AddHeader("HX-Redirect", url)
 		apollo.StatusCode(http.StatusOK)
 	} else {
 		apollo.AddHeader("Location", url)
-		apollo.StatusCode(http.StatusSeeOther)
+		apollo.StatusCode(statusCode)
 	}
 }
 
