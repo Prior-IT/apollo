@@ -54,16 +54,12 @@ type (
 // New creates a new server with the specified state object and configuration.
 func New[state State](s state, cfg *config.Config) *Server[state] {
 	server := &Server[state]{
-		mux:    chi.NewMux(),
-		state:  s,
-		logger: slog.Default(),
-		layout: defaultLayout(),
-		errorHandler: func(apollo *Apollo, err error) {
-			apollo.Writer.WriteHeader(http.StatusInternalServerError)
-			apollo.Error("[ERROR] Internal server error", "error", err)
-			render.PlainText(apollo.Writer, apollo.Request, "internal server error")
-		},
-		cfg: cfg,
+		mux:          chi.NewMux(),
+		state:        s,
+		logger:       slog.Default(),
+		layout:       defaultLayout(),
+		errorHandler: DefaultErrorHandler,
+		cfg:          cfg,
 	}
 
 	// Attach default not found handler
