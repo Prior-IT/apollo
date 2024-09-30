@@ -45,3 +45,25 @@
 		cursor: pointer;
 	}
 }
+
+@layer utilities {
+	.hide-during-request {
+		opacity: 1;
+	}
+
+	.htmx-request>.htmx-indicator~.hide-during-request {
+		opacity: 0;
+		max-width: 0;
+		overflow: hidden;
+		text-wrap: nowrap;
+	}
+
+	.htmx-indicator {
+		max-width: 0;
+	}
+
+	.htmx-request .htmx-indicator {
+		max-width: 100%;
+	}
+
+}

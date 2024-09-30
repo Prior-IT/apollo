@@ -75,10 +75,11 @@ func Button(props ButtonProps) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		var templ_7745c5c3_Var2 = []any{
-			"rounded-lg py-2 px-8 gap-2 shadow enabled:hover:shadow-sm",
+			"relative",
 			"flex flex-row items-center justify-center",
+			"rounded-lg py-2 px-8 shadow enabled:hover:shadow-sm",
 			"disabled:opacity-50 disabled:cursor-not-allowed",
-			"transition-button enabled:hover:scale-105 enabled:active:scale-95",
+			"transition-button enabled:hover:scale-[1.03] enabled:active:scale-[0.97]",
 			props.Class,
 			buttonTypeClass[props.Type],
 			templ.KV("w-full block", props.Block),
@@ -119,14 +120,14 @@ func Button(props ButtonProps) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if len(props.HxGet) > 0 {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" hx-disabled-elt=\"this\" hx-get=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" hx-disabled-elt=\"this\" hx-on::after-request=\"this.classList.remove(&#39;htmx-request&#39;) // see https://github.com/bigskysoftware/htmx/issues/2295\" hx-get=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(props.HxGet)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/button.templ`, Line: 67, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/button.templ`, Line: 69, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -158,7 +159,7 @@ func Button(props ButtonProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("><i class=\"size-4 htmx-indicator animate-spin text-center\" aria-hidden=\"true\" data-feather=\"loader\"></i> <span class=\"hide-during-request flex flex-row items-center justify-center gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -166,7 +167,7 @@ func Button(props ButtonProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</button>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span></button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

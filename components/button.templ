@@ -53,10 +53,11 @@ templ Button(props ButtonProps) {
 	<button
 		type={ htmlTypeToString[props.HtmlType] }
 		class={
-			"rounded-lg py-2 px-8 gap-2 shadow enabled:hover:shadow-sm",
+			"relative",
 			"flex flex-row items-center justify-center",
+			"rounded-lg py-2 px-8 shadow enabled:hover:shadow-sm",
 			"disabled:opacity-50 disabled:cursor-not-allowed",
-			"transition-button enabled:hover:scale-105 enabled:active:scale-95",
+			"transition-button enabled:hover:scale-[1.03] enabled:active:scale-[0.97]",
 			props.Class,
 			buttonTypeClass[props.Type],
 			templ.KV("w-full block", props.Block),
@@ -64,6 +65,7 @@ templ Button(props ButtonProps) {
 		}
 		if len(props.HxGet) > 0 {
 			hx-disabled-elt="this"
+			hx-on::after-request="this.classList.remove('htmx-request') // see https://github.com/bigskysoftware/htmx/issues/2295"
 			hx-get={ props.HxGet }
 		}
 		if props.Link {
@@ -76,6 +78,9 @@ templ Button(props ButtonProps) {
 		}
 		{ props.Attrs... }
 	>
-		{ children... }
+		<i class="size-4 htmx-indicator animate-spin text-center" aria-hidden="true" data-feather="loader"></i>
+		<span class="hide-during-request flex flex-row items-center justify-center gap-2">
+			{ children... }
+		</span>
 	</button>
 }
