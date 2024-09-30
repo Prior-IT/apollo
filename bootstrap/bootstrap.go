@@ -22,7 +22,7 @@ import (
 // The state is responsible for closing the database in its own Close function after it's done using it.
 type BootstrappedState[state server.State] interface {
 	server.State
-	Init(server *server.Server[state], cfg *config.Config, db *postgres.ApolloDB)
+	Init(server *server.Server[state], cfg *config.Config, db *postgres.DB)
 }
 
 // Minimal creates a new server and initializes all default systems.

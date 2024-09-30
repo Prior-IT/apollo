@@ -8,7 +8,7 @@ import (
 	"github.com/prior-it/apollo/postgres/internal/sqlc"
 )
 
-func NewUserService(DB *ApolloDB) *UserService {
+func NewUserService(DB *DB) *UserService {
 	q := sqlc.New(DB)
 	return &UserService{q}
 }

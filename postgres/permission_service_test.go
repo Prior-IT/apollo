@@ -13,7 +13,7 @@ import (
 )
 
 func CreateUserWithPermissions(
-	db *postgres.ApolloDB,
+	db *postgres.DB,
 	Permissions map[permissions.Permission]bool,
 ) *core.User {
 	ctx := context.Background()

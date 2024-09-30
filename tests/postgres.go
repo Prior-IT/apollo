@@ -15,7 +15,7 @@ import (
 
 var Faker = gofakeit.New(rand.Uint64())
 
-func DB() *postgres.ApolloDB {
+func DB() *postgres.DB {
 	ctx := context.Background()
 	err := godotenv.Load("../.env")
 	if err != nil {

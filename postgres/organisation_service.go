@@ -8,14 +8,14 @@ import (
 	"github.com/prior-it/apollo/postgres/internal/sqlc"
 )
 
-func NewOrganisationService(DB *ApolloDB) *OrganisationService {
+func NewOrganisationService(DB *DB) *OrganisationService {
 	q := sqlc.New(DB)
 	return &OrganisationService{DB, q}
 }
 
 // Postgres implementation of the core OrganisationService interface.
 type OrganisationService struct {
-	db *ApolloDB
+	db *DB
 	q  *sqlc.Queries
 }
 
@@ -52,7 +52,10 @@ func (o *OrganisationService) AddOrganisation(
 }
 
 // DeleteOrganisation implements core.OrganisationService.DeleteOrganisation
-func (o *OrganisationService) DeleteOrganisation(ctx context.Context, id core.OrganisationID) error {
+func (o *OrganisationService) DeleteOrganisation(
+	ctx context.Context,
+	id core.OrganisationID,
+) error {
 	return o.q.DeleteOrganisation(ctx, int32(id))
 }
 
@@ -66,7 +69,10 @@ func (o *OrganisationService) GetAmountOfOrganisations(ctx context.Context) (uin
 }
 
 // GetOrganisation implements core.OrganisationService.GetOrganisation
-func (o *OrganisationService) GetOrganisation(ctx context.Context, id core.OrganisationID) (*core.Organisation, error) {
+func (o *OrganisationService) GetOrganisation(
+	ctx context.Context,
+	id core.OrganisationID,
+) (*core.Organisation, error) {
 	organisation, err := o.q.GetOrganisation(ctx, int32(id))
 	if err != nil {
 		return nil, ConvertPgError(err)
@@ -84,7 +90,10 @@ func (o *OrganisationService) ListOrganisations(ctx context.Context) ([]core.Org
 }
 
 // ListOrganisationChildren implements core.OrganisationService.ListOrganisationChildren
-func (o *OrganisationService) ListOrganisationChildren(ctx context.Context, parentID core.OrganisationID) ([]core.Organisation, error) {
+func (o *OrganisationService) ListOrganisationChildren(
+	ctx context.Context,
+	parentID core.OrganisationID,
+) ([]core.Organisation, error) {
 	i32ParentID := int32(parentID)
 	organisations, err := o.q.ListOrganisationChildren(ctx, &i32ParentID)
 	if err != nil {
@@ -94,7 +103,10 @@ func (o *OrganisationService) ListOrganisationChildren(ctx context.Context, pare
 }
 
 // ListUsersInOrganisation implements core.OrganisationService.ListUsersInOrganisation
-func (o *OrganisationService) ListUsersInOrganisation(ctx context.Context, id core.OrganisationID) ([]core.User, error) {
+func (o *OrganisationService) ListUsersInOrganisation(
+	ctx context.Context,
+	id core.OrganisationID,
+) ([]core.User, error) {
 	users, err := o.q.ListUsersInOrganisation(ctx, int32(id))
 	if err != nil {
 		return nil, ConvertPgError(err)
@@ -103,7 +115,10 @@ func (o *OrganisationService) ListUsersInOrganisation(ctx context.Context, id co
 }
 
 // ListOrganisationsForUser implements core.OrganisationService.ListOrganisationsForUser
-func (o *OrganisationService) ListOrganisationsForUser(ctx context.Context, id core.UserID) ([]core.Organisation, error) {
+func (o *OrganisationService) ListOrganisationsForUser(
+	ctx context.Context,
+	id core.UserID,
+) ([]core.Organisation, error) {
 	organisations, err := o.q.ListOrganisationsForUser(ctx, int32(id))
 	if err != nil {
 		return nil, ConvertPgError(err)
@@ -112,17 +127,30 @@ func (o *OrganisationService) ListOrganisationsForUser(ctx context.Context, id c
 }
 
 // AddUser implements core.OrganisationService.AddUser
-func (o *OrganisationService) AddUser(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) error {
+func (o *OrganisationService) AddUser(
+	ctx context.Context,
+	UserID core.UserID,
+	OrgID core.OrganisationID,
+) error {
 	return o.AddUserTx(ctx, o.db, UserID, OrgID)
 }
 
-func (o *OrganisationService) AddUserTx(ctx context.Context, dbtx sqlc.DBTX, UserID core.UserID, OrgID core.OrganisationID) error {
+func (o *OrganisationService) AddUserTx(
+	ctx context.Context,
+	dbtx sqlc.DBTX,
+	UserID core.UserID,
+	OrgID core.OrganisationID,
+) error {
 	queries := sqlc.New(dbtx)
 	return queries.AddUserToOrganisation(ctx, int32(UserID), int32(OrgID))
 }
 
 // RemoveUser implements core.OrganisationService.RemoveUser
-func (o *OrganisationService) RemoveUser(ctx context.Context, UserID core.UserID, OrgID core.OrganisationID) error {
+func (o *OrganisationService) RemoveUser(
+	ctx context.Context,
+	UserID core.UserID,
+	OrgID core.OrganisationID,
+) error {
 	return o.q.RemoveUserFromOrganisation(ctx, int32(UserID), int32(OrgID))
 }
 
