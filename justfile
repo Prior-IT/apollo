@@ -22,9 +22,9 @@ dev:
     --build.bin="" \
     --build.cmd="just build" \
     --build.pre_cmd="just generate" \
-    --build.include_ext="go,templ,sql" \
+    --build.include_ext="go,templ,sql,cjs,css" \
     --build.exclude_regex="_templ.go" \
-    --build.exclude_dir="migrations,postgres/internal" \
+    --build.exclude_dir="migrations,postgres/internal,components/static" \
     --build.kill_delay "5s" \
     --build.send_interrupt "true" \
     --build.stop_on_error "true" \
