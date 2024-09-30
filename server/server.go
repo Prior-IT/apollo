@@ -22,7 +22,6 @@ import (
 	"github.com/prior-it/apollo/config"
 	"github.com/prior-it/apollo/core"
 	"github.com/prior-it/apollo/permissions"
-	apollomw "github.com/prior-it/apollo/server/middleware"
 	"github.com/vearutop/statigz"
 )
 
@@ -162,7 +161,7 @@ func (server *Server[state]) AttachDefaultMiddleware() {
 		middleware.Recoverer,
 		middleware.RealIP,
 		middleware.RequestID,
-		apollomw.HTTPLogger(server.cfg),
+		HTTPLogger(server.cfg),
 
 		// @TODO: Add gzip
 		middleware.Timeout(
