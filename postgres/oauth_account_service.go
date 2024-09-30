@@ -14,7 +14,7 @@ import (
 	"github.com/prior-it/apollo/postgres/internal/sqlc"
 )
 
-func NewOauthAccountService(db *ApolloDB) *PgOauthAccountService {
+func NewOauthAccountService(db *DB) *PgOauthAccountService {
 	q := sqlc.New(db)
 	return &PgOauthAccountService{q, db}
 }
@@ -22,7 +22,7 @@ func NewOauthAccountService(db *ApolloDB) *PgOauthAccountService {
 // Postgres implementation of the core UserService interface.
 type PgOauthAccountService struct {
 	q  *sqlc.Queries
-	db *ApolloDB
+	db *DB
 }
 
 // Force struct to implement the core interface

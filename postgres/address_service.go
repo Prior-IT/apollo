@@ -8,14 +8,14 @@ import (
 	"github.com/prior-it/apollo/postgres/internal/sqlc"
 )
 
-func NewAddressService(DB *ApolloDB) *AddressService {
+func NewAddressService(DB *DB) *AddressService {
 	q := sqlc.New(DB)
 	return &AddressService{DB, q}
 }
 
 // Postgres implementation of the core AddressService interface.
 type AddressService struct {
-	db *ApolloDB
+	db *DB
 	q  *sqlc.Queries
 }
 

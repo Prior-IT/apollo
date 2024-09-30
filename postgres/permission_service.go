@@ -11,14 +11,14 @@ import (
 	"github.com/prior-it/apollo/postgres/internal/sqlc"
 )
 
-func NewPermissionService(DB *ApolloDB) *PermissionService {
+func NewPermissionService(DB *DB) *PermissionService {
 	sqlc := sqlc.New(DB)
 	return &PermissionService{db: DB, q: sqlc}
 }
 
 // Postgres implementation of the core UserService interface.
 type PermissionService struct {
-	db *ApolloDB
+	db *DB
 	q  *sqlc.Queries
 }
 

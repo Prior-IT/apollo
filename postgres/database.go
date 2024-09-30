@@ -16,24 +16,24 @@ import (
 //go:embed migrations/*.sql
 var migrations embed.FS
 
-type ApolloDB struct {
+type DB struct {
 	*pgxpool.Pool
 }
 
 // Initialise a new database connection. connString should be a valid postgres connection string (such as a postgres-url).
-func NewDB(ctx context.Context, connString string) (*ApolloDB, error) {
+func NewDB(ctx context.Context, connString string) (*DB, error) {
 	slog.Info("Connecting to postgres database", "connString", connString)
 	pool, err := pgxpool.New(ctx, connString)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to postgres database: %w", err)
 	}
-	return &ApolloDB{pool}, nil
+	return &DB{pool}, nil
 }
 
 // Switch the database schema. If the specified schema does not exist already, this will create it.
 // Beware that the schema here is not sanitised, as such this could be used to do SQL injection and should never
 // pass on unsanitised user input!
-func (db *ApolloDB) SwitchSchema(ctx context.Context, schema string) error {
+func (db *DB) SwitchSchema(ctx context.Context, schema string) error {
 	slog.Info("Switching postgres schema", "schema", schema)
 	if _, err := db.Exec(ctx, fmt.Sprintf("BEGIN; SELECT pg_advisory_xact_lock(1); CREATE SCHEMA IF NOT EXISTS %s; COMMIT;", schema)); err != nil {
 		return fmt.Errorf("cannot create schema '%v': %w", schema, err)
@@ -47,7 +47,7 @@ func (db *ApolloDB) SwitchSchema(ctx context.Context, schema string) error {
 // Delete the specified database schema, beware that this will delete all tables and data in the schema.
 // The schema string here is not sanitised, as such this could be used to do SQL injection and should never
 // pass on unsanitised user input!
-func (db *ApolloDB) DeleteSchema(ctx context.Context, schema string) error {
+func (db *DB) DeleteSchema(ctx context.Context, schema string) error {
 	slog.Info("Deleting postgres schema", "schema", schema)
 	if _, err := db.Exec(ctx, fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE;", schema)); err != nil {
 		return fmt.Errorf("cannot delete schema '%v': %w", schema, err)
@@ -56,7 +56,7 @@ func (db *ApolloDB) DeleteSchema(ctx context.Context, schema string) error {
 }
 
 // Migrate the database using the specified embedded migration folder.
-func (db *ApolloDB) Migrate(folder embed.FS) error {
+func (db *DB) Migrate(folder embed.FS) error {
 	fsys, err := fs.Sub(folder, "migrations")
 	if err != nil {
 		return fmt.Errorf("Cannot get filesystem: %w", err)
@@ -96,7 +96,7 @@ func (db *ApolloDB) Migrate(folder embed.FS) error {
 }
 
 // Migrate the database down a single migration using the specified embedded migration folder.
-func (db *ApolloDB) MigrateDown(folder embed.FS) error {
+func (db *DB) MigrateDown(folder embed.FS) error {
 	goose.SetBaseFS(folder)
 
 	if err := goose.SetDialect("postgres"); err != nil {
@@ -119,7 +119,7 @@ func (db *ApolloDB) MigrateDown(folder embed.FS) error {
 // Migrate the Apollo models in the database, if required.
 // Note: this will always return the db connection back to the "public" schema,
 // use [SwitchSchema] afterwards if you don't want this.
-func (db *ApolloDB) MigrateApollo(ctx context.Context) error {
+func (db *DB) MigrateApollo(ctx context.Context) error {
 	if err := db.SwitchSchema(ctx, "apollo"); err != nil {
 		return fmt.Errorf("cannot switch to the apollo schema: %w", err)
 	}
@@ -137,7 +137,7 @@ func (db *ApolloDB) MigrateApollo(ctx context.Context) error {
 // Migrate the Apollo models down a single migration in the database
 // Note: this will always return the db connection back to the "public" schema,
 // use [SwitchSchema] afterwards if you don't want this.
-func (db *ApolloDB) MigrateApolloDown(ctx context.Context) error {
+func (db *DB) MigrateApolloDown(ctx context.Context) error {
 	if err := db.SwitchSchema(ctx, "apollo"); err != nil {
 		return fmt.Errorf("cannot switch to the apollo schema: %w", err)
 	}
