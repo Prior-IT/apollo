@@ -382,11 +382,17 @@ func (apollo *Apollo) RenderComponent(
 	return component.Render(ctx, apollo.Writer)
 }
 
+// RenderOptions specifies options you can use when rendering a page with the Apollo object.
+type RenderOptions struct {
+	// If CustomLayout is set, the page will render with the specified layout instead of the default one
+	CustomLayout templ.Component
+}
+
 // RenderPage renders the specified page in the response body.
 // If the request was made using HTMX, it will simply return the pages contents.
 // If the request was made without HTMX (e.g. by refreshing), it will return the page
-// surrounded with the current default lay-out. You can change the default lay-out by
-// calling `SetDefaultLayout` on the router during configuration.
+// surrounded with the current default lay-out, unless a custom layout was specified in the render options.
+// You can change the default lay-out by calling `SetDefaultLayout` on the router during configuration.
 // RenderPage can be combined with RenderComponent to perform out-of-band swaps in a
 // single response.
 //
@@ -395,15 +401,24 @@ func (apollo *Apollo) RenderComponent(
 //	if err := server.RenderComponent(components.OOBNotification(data)); err != nil {
 //		return err
 //	}
-//	return server.RenderPage(pages.ActualResponse(otherData))
+//	return server.RenderPage(pages.ActualResponse(otherData), nil)
 func (apollo *Apollo) RenderPage(
 	page templ.Component,
+	renderOptions *RenderOptions,
 ) error {
+	if renderOptions == nil {
+		renderOptions = &RenderOptions{} // leave everything default
+	}
 	ctx := apollo.Context()
 	comp := page
+	// If we're requesting with htmx, do not rerender the layout
 	if apollo.GetHeader("hx-request") != "true" {
 		ctx = templ.WithChildren(ctx, page)
-		comp = apollo.layout
+		if renderOptions.CustomLayout != nil {
+			comp = renderOptions.CustomLayout
+		} else {
+			comp = apollo.layout
+		}
 	}
 	return comp.Render(ctx, apollo.Writer)
 }
