@@ -208,9 +208,6 @@ func (server *Server[state]) SessionMiddleware() func(http.Handler) http.Handler
 		return noop
 	}
 	return func(next http.Handler) http.Handler {
-		if server.sessionStore == nil {
-			panic("You need to configure the session store before attaching Apollo middleware")
-		}
 		gob.Register(core.UserID(0))
 		gob.Register(time.Time{})
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
