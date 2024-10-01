@@ -410,9 +410,10 @@ func (server *Server[state]) Delete(
 func (server *Server[state]) Page(
 	pattern string,
 	component templ.Component,
+	options *RenderOptions,
 ) *Server[state] {
 	server.mux.Get(pattern, server.handle(func(apollo *Apollo, _ state) error {
-		return apollo.RenderPage(component)
+		return apollo.RenderPage(component, options)
 	}))
 	return server
 }
