@@ -12,13 +12,15 @@ type ButtonType int
 const (
 	ButtonType_Primary ButtonType = iota
 	ButtonType_Secondary
-	ButtonType_Outline
+	ButtonType_Accent
+	ButtonType_Inverted
 )
 
 var buttonTypeClass = map[ButtonType]string{
-	ButtonType_Primary:   "bg-primary-light enabled:hover:bg-primary text-white shadow-primary-dark/60",
-	ButtonType_Secondary: "bg-secondary enabled:hover:bg-secondary-dark text-white shadow-secondary-dark/60",
-	ButtonType_Outline:   "border border-slate-400 text-body enabled:hover:bg-slate-200/50 shadow-slate-600/40",
+	ButtonType_Primary:   "bg-primary enabled:hover:bg-primary-dark text-white shadow-primary-dark/60",
+	ButtonType_Secondary: "border border-primary text-primary enabled:hover:bg-primary-dark enabled:hover:text-white enabled:hover:border-primary-dark shadow-primary-dark/60",
+	ButtonType_Accent:    "bg-accent enabled:hover:bg-accent-dark text-white shadow-accent-dark/60",
+	ButtonType_Inverted:  "bg-white enabled:hover:bg-gray-50 text-body shadow-white/40",
 }
 
 type HtmlType int
@@ -27,25 +29,25 @@ const (
 	HtmlType_Button HtmlType = iota
 	HtmlType_Submit
 	HtmlType_Reset
-	HtmlType_Menu
 )
 
 var htmlTypeToString = map[HtmlType]string{
 	HtmlType_Button: "button",
 	HtmlType_Submit: "submit",
 	HtmlType_Reset:  "reset",
-	HtmlType_Menu:   "menu",
 }
 
 type ButtonProps struct {
 	// The semantic button type, different types will have consistently different visual styles
-	Type ButtonType
+	Type ButtonType `default:"ButtonType_Primary"`
 	// The HTML button type
-	HtmlType HtmlType
+	HtmlType HtmlType `default:"HtmlType_Button"`
 	// If set, clicking the button will trigger a htmx get request
 	HxGet string
 	// If set, the button will become a standalone, full-width button
 	Block bool
+	// If set, the button will function as a link
+	Link bool
 	// If set, the button will be disabled
 	Disabled bool
 	// Additional class(es) to append to the button element
@@ -76,6 +78,7 @@ func Button(props ButtonProps) templ.Component {
 			"rounded-lg py-2 px-8 gap-2 shadow enabled:hover:shadow-sm",
 			"flex flex-row items-center justify-center",
 			"disabled:opacity-50 disabled:cursor-not-allowed",
+			"transition-button enabled:hover:scale-105 enabled:active:scale-95",
 			props.Class,
 			buttonTypeClass[props.Type],
 			templ.KV("w-full block", props.Block),
@@ -92,7 +95,7 @@ func Button(props ButtonProps) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(htmlTypeToString[props.HtmlType])
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/button.templ`, Line: 52, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/button.templ`, Line: 54, Col: 41}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -123,13 +126,24 @@ func Button(props ButtonProps) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(props.HxGet)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/button.templ`, Line: 63, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/button.templ`, Line: 66, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		if props.Link {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" role=\"link\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" role=\"button\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

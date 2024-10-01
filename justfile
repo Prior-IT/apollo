@@ -14,19 +14,22 @@ default:
 generate:
   @go run {{templ}} generate -include-version=false
   @go run {{sqlc}} generate -f ./postgres/sqlc.yaml
-  @npx {{tailwind}} -i components/input.css -o components/apollo.css -m
+  @npx {{tailwind}} -i components/input.css -o components/static/apollo.css -m
 
 # Continuously generate auxiliary files on every file save
 dev:
   @go run {{air}} \
-    -build.cmd="just build" \
-    -build.pre_cmd="just generate" \
-    -build.include_ext="go,templ,sql" \
-    -build.exclude_regex="_templ.go" \
-    -build.exclude_dir="migrations,postgres/internal" \
-    -build.stop_on_error="true" \
-    -build.bin="" \
-    -c "/dev/null"
+    --build.bin="" \
+    --build.cmd="just build" \
+    --build.pre_cmd="just generate" \
+    --build.include_ext="go,templ,sql" \
+    --build.exclude_regex="_templ.go" \
+    --build.exclude_dir="migrations,postgres/internal" \
+    --build.kill_delay "5s" \
+    --build.send_interrupt "true" \
+    --build.stop_on_error "true" \
+    --misc.clean_on_exit "true" \
+    --c "/dev/null"
 
 # Build the library
 build:
