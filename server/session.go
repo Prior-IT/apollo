@@ -5,14 +5,20 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/sessions"
+	"github.com/prior-it/apollo/config"
 	"github.com/prior-it/apollo/core"
 )
 
 type contextKey uint
 
-const cookieUser = "apollo-user"
+const (
+	cookieUser = "apollo-user"
+	cookieCSRF = "apollo-csrf"
+)
 
 const (
+	// User cookie
 	sessionLoggedIn         = "apollo-logged-in"
 	sessionIsAdmin          = "apollo-user-admin"
 	sessionUserName         = "apollo-user-name"
@@ -21,7 +27,28 @@ const (
 	sessionUserID           = "apollo-user-id"
 	sessionOrganisationID   = "apollo-organisation-id"
 	sessionOrganisationName = "apollo-organisation-name"
+
+	// CSRF cookie
+	sessionCSRFToken = "token"
 )
+
+func (apollo *Apollo) Session() *sessions.Session {
+	session := Session(apollo.Context())
+	return configureCookie(apollo.Cfg, session)
+}
+
+func configureCookie(cfg *config.Config, session *sessions.Session) *sessions.Session {
+	if cfg.App.Debug {
+		session.Options.Secure = true
+		session.Options.HttpOnly = true
+		session.Options.SameSite = http.SameSiteStrictMode
+	} else {
+		session.Options.Secure = false
+		session.Options.HttpOnly = false
+		session.Options.SameSite = http.SameSiteLaxMode
+	}
+	return session
+}
 
 // Login will log in with the specified user.
 func (apollo *Apollo) Login(user *core.User) error {
@@ -31,16 +58,7 @@ func (apollo *Apollo) Login(user *core.User) error {
 	if apollo.store == nil {
 		panic("you need to specify a session store before logging in")
 	}
-	session := Session(apollo.Context())
-	if apollo.Cfg.App.Debug {
-		session.Options.Secure = true
-		session.Options.HttpOnly = true
-		session.Options.SameSite = http.SameSiteStrictMode
-	} else {
-		session.Options.Secure = false
-		session.Options.HttpOnly = false
-		session.Options.SameSite = http.SameSiteLaxMode
-	}
+	session := apollo.Session()
 	session.Values[sessionLoggedIn] = true
 	session.Values[sessionIsAdmin] = user.Admin
 	session.Values[sessionUserName] = user.Name
@@ -55,9 +73,9 @@ func (apollo *Apollo) Login(user *core.User) error {
 // such as permission checks.
 func (apollo *Apollo) SetActiveOrganisation(organisation *core.Organisation) error {
 	if apollo.store == nil {
-		panic("you need to specify a session store before logging in")
+		panic("you need to specify a session store before setting an active organisation")
 	}
-	session := Session(apollo.Context())
+	session := apollo.Session()
 	if organisation != nil {
 		session.Values[sessionOrganisationID] = organisation.ID
 		session.Values[sessionOrganisationName] = organisation.Name
@@ -72,7 +90,7 @@ func (apollo *Apollo) SetActiveOrganisation(organisation *core.Organisation) err
 // Utility function that retrieves a full core.User object from the current session, if one exists.
 // If there is no active session, this will return core.ErrUnauthenticated
 func (apollo *Apollo) retrieveUser() (*core.User, error) {
-	session := Session(apollo.Context())
+	session := apollo.Session()
 
 	loggedIn, ok := session.Values[sessionLoggedIn].(bool)
 
@@ -140,7 +158,7 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 // If there is no active session, this will return core.ErrUnauthenticated
 // If the active session does not have an "active organisation", this will return core.ErrNoActiveOrganisation
 func (apollo *Apollo) retrieveOrganisation() (*core.Organisation, error) {
-	session := Session(apollo.Context())
+	session := apollo.Session()
 
 	loggedIn, ok := session.Values[sessionLoggedIn].(bool)
 
@@ -178,7 +196,7 @@ func (apollo *Apollo) retrieveOrganisation() (*core.Organisation, error) {
 
 // Logout will log the current user out.
 func (apollo *Apollo) Logout() error {
-	session := Session(apollo.Context())
+	session := apollo.Session()
 	session.Values[sessionLoggedIn] = false
 	session.Values[sessionIsAdmin] = false
 	session.Values[sessionUserName] = ""

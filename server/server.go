@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/gob"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -20,7 +19,6 @@ import (
 	"github.com/go-chi/render"
 	"github.com/gorilla/sessions"
 	"github.com/prior-it/apollo/config"
-	"github.com/prior-it/apollo/core"
 	"github.com/prior-it/apollo/permissions"
 	"github.com/vearutop/statigz"
 )
@@ -59,6 +57,13 @@ func New[state State](s state, cfg *config.Config) *Server[state] {
 		layout:       defaultLayout(),
 		errorHandler: DefaultErrorHandler,
 		cfg:          cfg,
+	}
+
+	if len(cfg.App.AuthenticationKey) > 0 && len(cfg.App.EncryptionKey) > 0 {
+		server.sessionStore = sessions.NewCookieStore(
+			[]byte(cfg.App.AuthenticationKey),
+			[]byte(cfg.App.EncryptionKey),
+		)
 	}
 
 	// Attach default not found handler
@@ -170,72 +175,9 @@ func (server *Server[state]) AttachDefaultMiddleware() {
 		// @TODO: Cookie store
 		server.SessionMiddleware(),
 		// @TODO: Page caching
-		// @TODO: Csrf
-		server.ContextMiddleware(),
+		server.CSRFTokenMiddleware(),
+		server.ContextMiddleware,
 	)
-}
-
-// ContextMiddleware enriches the request context.
-// You should always attach this before adding routes in order to use Apollo effectively.
-func (server *Server[state]) ContextMiddleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-
-			ctx = context.WithValue(ctx, ctxConfig, server.cfg)
-
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
-}
-
-func noop(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r)
-	})
-}
-
-// SessionMiddleware returns the Apollo session middleware.
-// Attach this before adding routes, if you want to use sessions.
-func (server *Server[state]) SessionMiddleware() func(http.Handler) http.Handler {
-	if server.sessionStore == nil {
-		slog.Warn("Not enabling the SessionMiddleware since there is no SessionStore configured")
-		return noop
-	}
-	return func(next http.Handler) http.Handler {
-		gob.Register(core.UserID(0))
-		gob.Register(time.Time{})
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-
-			// Attach session context
-			session, err := server.sessionStore.Get(r, cookieUser)
-			if err != nil {
-				slog.Error("Error while retrieving active session", "error", err)
-				return
-			}
-
-			ctx = context.WithValue(ctx, ctxSession, session)
-
-			loggedIn, ok := session.Values[sessionLoggedIn].(bool)
-			ctx = context.WithValue(ctx, ctxLoggedIn, ok && loggedIn)
-
-			isAdmin, ok := session.Values[sessionIsAdmin].(bool)
-			ctx = context.WithValue(ctx, ctxIsAdmin, ok && isAdmin)
-
-			userName, ok := session.Values[sessionUserName].(string)
-			if ok {
-				ctx = context.WithValue(ctx, ctxUserName, userName)
-			}
-
-			userID, ok := session.Values[sessionUserID].(core.UserID)
-			if ok {
-				ctx = context.WithValue(ctx, ctxUserID, userID)
-			}
-
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
 }
 
 // Start a new goroutine that runs the server.
