@@ -91,7 +91,7 @@ func (u *UserService) UpdateUser(
 	return convertUser(dbUser)
 }
 
-func convertUser(user sqlc.ApolloUser) (*core.User, error) {
+func convertUser(user sqlc.User) (*core.User, error) {
 	email, err := core.NewEmailAddress(user.Email)
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func convertUser(user sqlc.ApolloUser) (*core.User, error) {
 	}, nil
 }
 
-func convertUserList(users []sqlc.ApolloUser) ([]core.User, error) {
+func convertUserList(users []sqlc.User) ([]core.User, error) {
 	list := make([]core.User, len(users))
 	for i, v := range users {
 		u, err := convertUser(v)

@@ -33,7 +33,7 @@ func CreateUserWithPermissions(
 }
 
 func TestPermissionService(t *testing.T) {
-	db := tests.DB()
+	db := tests.DB(t)
 	service := postgres.NewPermissionService(db)
 	userService := postgres.NewUserService(db)
 	defer tests.DeleteAllPermissions(service)

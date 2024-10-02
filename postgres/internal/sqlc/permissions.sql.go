@@ -10,7 +10,7 @@ import (
 )
 
 const addUserToPermissionGroup = `-- name: AddUserToPermissionGroup :exec
-INSERT INTO apollo.user_permissiongroup_membership (group_id, user_id)
+INSERT INTO user_permissiongroup_membership (group_id, user_id)
     VALUES ($1, $2)
 `
 
@@ -20,8 +20,8 @@ func (q *Queries) AddUserToPermissionGroup(ctx context.Context, groupID int32, u
 }
 
 const addUserToPermissionGroupForOrganisation = `-- name: AddUserToPermissionGroupForOrganisation :exec
-INSERT INTO apollo.organisation_users_permissiongroups (permission_group_id, organisation_users_id)
-    VALUES ($1, (SELECT id FROM apollo.organisation_users WHERE user_id = $2 AND organisation_id = $3))
+INSERT INTO organisation_users_permissiongroups (permission_group_id, organisation_users_id)
+    VALUES ($1, (SELECT id FROM organisation_users WHERE user_id = $2 AND organisation_id = $3))
 `
 
 type AddUserToPermissionGroupForOrganisationParams struct {
@@ -36,7 +36,7 @@ func (q *Queries) AddUserToPermissionGroupForOrganisation(ctx context.Context, a
 }
 
 const createPermission = `-- name: CreatePermission :exec
-INSERT INTO apollo.permissions (name)
+INSERT INTO permissions (name)
     VALUES ($1)
 ON CONFLICT (name)
     DO NOTHING
@@ -48,21 +48,21 @@ func (q *Queries) CreatePermission(ctx context.Context, name string) error {
 }
 
 const createPermissionGroup = `-- name: CreatePermissionGroup :one
-INSERT INTO apollo.permissiongroups (name)
+INSERT INTO permissiongroups (name)
     VALUES ($1)
 RETURNING
     id, name
 `
 
-func (q *Queries) CreatePermissionGroup(ctx context.Context, name *string) (ApolloPermissiongroup, error) {
+func (q *Queries) CreatePermissionGroup(ctx context.Context, name *string) (Permissiongroup, error) {
 	row := q.db.QueryRow(ctx, createPermissionGroup, name)
-	var i ApolloPermissiongroup
+	var i Permissiongroup
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
 }
 
 const createPermissionGroupPermission = `-- name: CreatePermissionGroupPermission :exec
-INSERT INTO apollo.permissiongroup_permissions (group_id, permission, enabled)
+INSERT INTO permissiongroup_permissions (group_id, permission, enabled)
     VALUES ($1, $2, $3)
 `
 
@@ -78,21 +78,21 @@ func (q *Queries) CreatePermissionGroupPermission(ctx context.Context, arg Creat
 }
 
 const createPermissionGroupWithID = `-- name: CreatePermissionGroupWithID :one
-INSERT INTO apollo.permissiongroups (id, name)
+INSERT INTO permissiongroups (id, name)
     VALUES ($1, $2)
 RETURNING
     id, name
 `
 
-func (q *Queries) CreatePermissionGroupWithID(ctx context.Context, iD int32, name *string) (ApolloPermissiongroup, error) {
+func (q *Queries) CreatePermissionGroupWithID(ctx context.Context, iD int32, name *string) (Permissiongroup, error) {
 	row := q.db.QueryRow(ctx, createPermissionGroupWithID, iD, name)
-	var i ApolloPermissiongroup
+	var i Permissiongroup
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
 }
 
 const deletePermissionGroup = `-- name: DeletePermissionGroup :exec
-DELETE FROM apollo.permissiongroups
+DELETE FROM permissiongroups
 WHERE permissiongroups.id = $1
 `
 
@@ -105,14 +105,14 @@ const getPermissionGroup = `-- name: GetPermissionGroup :one
 SELECT
     pg.id, pg.name
 FROM
-    apollo.permissiongroups pg
+    permissiongroups pg
 WHERE
     pg.id = $1
 `
 
-func (q *Queries) GetPermissionGroup(ctx context.Context, id int32) (ApolloPermissiongroup, error) {
+func (q *Queries) GetPermissionGroup(ctx context.Context, id int32) (Permissiongroup, error) {
 	row := q.db.QueryRow(ctx, getPermissionGroup, id)
-	var i ApolloPermissiongroup
+	var i Permissiongroup
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
 }
@@ -122,8 +122,8 @@ SELECT
     p.name AS permission,
     COALESCE(pgp.enabled, FALSE) AS enabled
 FROM
-    apollo.permissions p
-    LEFT JOIN apollo.permissiongroup_permissions pgp ON p.name = pgp.permission
+    permissions p
+    LEFT JOIN permissiongroup_permissions pgp ON p.name = pgp.permission
         AND pgp.group_id = $1
 `
 
@@ -156,18 +156,18 @@ const listPermissionGroups = `-- name: ListPermissionGroups :many
 SELECT
     permissiongroups.id, permissiongroups.name
 FROM
-    apollo.permissiongroups
+    permissiongroups
 `
 
-func (q *Queries) ListPermissionGroups(ctx context.Context) ([]ApolloPermissiongroup, error) {
+func (q *Queries) ListPermissionGroups(ctx context.Context) ([]Permissiongroup, error) {
 	rows, err := q.db.Query(ctx, listPermissionGroups)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ApolloPermissiongroup
+	var items []Permissiongroup
 	for rows.Next() {
-		var i ApolloPermissiongroup
+		var i Permissiongroup
 		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
@@ -183,21 +183,21 @@ const listPermissionGroupsForUser = `-- name: ListPermissionGroupsForUser :many
 SELECT
     pg.id, pg.name
 FROM
-    apollo.permissiongroups pg
-    INNER JOIN apollo.user_permissiongroup_membership usr ON usr.group_id = pg.id
+    permissiongroups pg
+    INNER JOIN user_permissiongroup_membership usr ON usr.group_id = pg.id
 WHERE
     usr.user_id = $1
 `
 
-func (q *Queries) ListPermissionGroupsForUser(ctx context.Context, userID int32) ([]ApolloPermissiongroup, error) {
+func (q *Queries) ListPermissionGroupsForUser(ctx context.Context, userID int32) ([]Permissiongroup, error) {
 	rows, err := q.db.Query(ctx, listPermissionGroupsForUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ApolloPermissiongroup
+	var items []Permissiongroup
 	for rows.Next() {
-		var i ApolloPermissiongroup
+		var i Permissiongroup
 		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
@@ -213,21 +213,21 @@ const listPermissionGroupsForUserForOrganisation = `-- name: ListPermissionGroup
 SELECT
     pg.id, pg.name
 FROM
-    apollo.permissiongroups pg
-    INNER JOIN apollo.organisation_users_permissiongroups org_usr ON org_usr.permission_group_id = pg.id
+    permissiongroups pg
+    INNER JOIN organisation_users_permissiongroups org_usr ON org_usr.permission_group_id = pg.id
 WHERE
-    org_usr.organisation_users_id = (SELECT id FROM apollo.organisation_users WHERE user_id = $1 AND organisation_id = $2)
+    org_usr.organisation_users_id = (SELECT id FROM organisation_users WHERE user_id = $1 AND organisation_id = $2)
 `
 
-func (q *Queries) ListPermissionGroupsForUserForOrganisation(ctx context.Context, userID int32, organisationID int32) ([]ApolloPermissiongroup, error) {
+func (q *Queries) ListPermissionGroupsForUserForOrganisation(ctx context.Context, userID int32, organisationID int32) ([]Permissiongroup, error) {
 	rows, err := q.db.Query(ctx, listPermissionGroupsForUserForOrganisation, userID, organisationID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ApolloPermissiongroup
+	var items []Permissiongroup
 	for rows.Next() {
-		var i ApolloPermissiongroup
+		var i Permissiongroup
 		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
@@ -243,7 +243,7 @@ const listPermissions = `-- name: ListPermissions :many
 SELECT
     permissions.name
 FROM
-    apollo.permissions
+    permissions
 `
 
 func (q *Queries) ListPermissions(ctx context.Context) ([]string, error) {
@@ -268,7 +268,7 @@ func (q *Queries) ListPermissions(ctx context.Context) ([]string, error) {
 
 const renamePermissionGroup = `-- name: RenamePermissionGroup :exec
 UPDATE
-    apollo.permissiongroups
+    permissiongroups
 SET
     name = $2
 WHERE
@@ -282,7 +282,7 @@ func (q *Queries) RenamePermissionGroup(ctx context.Context, iD int32, name *str
 
 const updatePermissionGroupPermission = `-- name: UpdatePermissionGroupPermission :exec
 UPDATE
-    apollo.permissiongroup_permissions
+    permissiongroup_permissions
 SET
     enabled = $3
 WHERE

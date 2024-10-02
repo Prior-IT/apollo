@@ -2,9 +2,11 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand/v2"
 	"os"
+	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/joho/godotenv"
@@ -15,7 +17,7 @@ import (
 
 var Faker = gofakeit.New(rand.Uint64())
 
-func DB() *postgres.DB {
+func DB(t *testing.T) *postgres.DB {
 	ctx := context.Background()
 	err := godotenv.Load("../.env")
 	if err != nil {
@@ -24,12 +26,19 @@ func DB() *postgres.DB {
 	url := os.Getenv("DATABASE_URL")
 	db, err := postgres.NewDB(ctx, url)
 	if err != nil {
-		panic(
+		t.Fatal(
 			"To test database functionality, set the DATABASE_URL env variable to a valid database",
 		)
 	}
 
-	err = db.MigrateApollo(ctx)
+	dbid := rand.Int32()
+	schema := fmt.Sprintf("tests_%v", dbid)
+	err = db.SwitchSchema(ctx, schema)
+	if err != nil {
+		t.Fatalf("Cannot change to test schema: %v", err)
+	}
+
+	err = db.Migrate(nil, "")
 	if err != nil {
 		log.Panicf("Cannot migrate apollo db: %v", err)
 	}

@@ -2,7 +2,7 @@
 SELECT
     *
 FROM
-    apollo.users
+    users
 WHERE
     id = $1
 LIMIT 1;
@@ -11,7 +11,7 @@ LIMIT 1;
 SELECT
     *
 FROM
-    apollo.users
+    users
 ORDER BY
     RANDOM();
 
@@ -19,21 +19,21 @@ ORDER BY
 SELECT
     COUNT(*)
 FROM
-    apollo.users;
+    users;
 
 -- name: CreateUser :one
-INSERT INTO apollo.users (name, email)
+INSERT INTO users (name, email)
     VALUES ($1, $2)
 RETURNING
     *;
 
 -- name: DeleteUser :exec
-DELETE FROM apollo.users
+DELETE FROM users
 WHERE id = $1;
 
 -- name: UpdateUserAdmin :exec
 UPDATE
-    apollo.users
+    users
 SET
     admin = $2
 WHERE
@@ -41,7 +41,7 @@ WHERE
 
 -- name: UpdateUser :one
 UPDATE
-    apollo.users
+    users
 SET
     name = COALESCE(sqlc.narg(name), name),
     email = COALESCE(sqlc.narg(email), email)
