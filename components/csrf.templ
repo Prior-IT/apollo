@@ -1,0 +1,7 @@
+package components
+
+import "github.com/prior-it/apollo/server"
+
+templ CSRF() {
+	<input class="hidden" aria-hidden="true" type="hidden" name={ server.CsrfName } value={ server.CSRF(ctx) }/>
+}
