@@ -10,7 +10,7 @@ import (
 )
 
 const addUserToOrganisation = `-- name: AddUserToOrganisation :exec
-INSERT INTO apollo.organisation_users (user_id, organisation_id)
+INSERT INTO organisation_users (user_id, organisation_id)
     VALUES ($1, $2)
 `
 
@@ -20,21 +20,21 @@ func (q *Queries) AddUserToOrganisation(ctx context.Context, userID int32, organ
 }
 
 const createOrganisation = `-- name: CreateOrganisation :one
-INSERT INTO apollo.organisations (name, parent_id)
+INSERT INTO organisations (name, parent_id)
     VALUES ($1, $2)
 RETURNING
     id, name, parent_id
 `
 
-func (q *Queries) CreateOrganisation(ctx context.Context, name string, parentID *int32) (ApolloOrganisation, error) {
+func (q *Queries) CreateOrganisation(ctx context.Context, name string, parentID *int32) (Organisation, error) {
 	row := q.db.QueryRow(ctx, createOrganisation, name, parentID)
-	var i ApolloOrganisation
+	var i Organisation
 	err := row.Scan(&i.ID, &i.Name, &i.ParentID)
 	return i, err
 }
 
 const deleteOrganisation = `-- name: DeleteOrganisation :exec
-DELETE FROM apollo.organisations
+DELETE FROM organisations
 WHERE id = $1
 `
 
@@ -47,7 +47,7 @@ const getAmountOfOrganisations = `-- name: GetAmountOfOrganisations :one
 SELECT
     COUNT(id)
 FROM
-    apollo.organisations
+    organisations
 `
 
 func (q *Queries) GetAmountOfOrganisations(ctx context.Context) (int64, error) {
@@ -61,15 +61,15 @@ const getOrganisation = `-- name: GetOrganisation :one
 SELECT
     id, name, parent_id
 FROM
-    apollo.organisations
+    organisations
 WHERE
     id = $1
 LIMIT 1
 `
 
-func (q *Queries) GetOrganisation(ctx context.Context, id int32) (ApolloOrganisation, error) {
+func (q *Queries) GetOrganisation(ctx context.Context, id int32) (Organisation, error) {
 	row := q.db.QueryRow(ctx, getOrganisation, id)
-	var i ApolloOrganisation
+	var i Organisation
 	err := row.Scan(&i.ID, &i.Name, &i.ParentID)
 	return i, err
 }
@@ -78,7 +78,7 @@ const getParentOrganisation = `-- name: GetParentOrganisation :one
 SELECT
     parent_id
 FROM
-    apollo.organisations
+    organisations
 WHERE
     id = $1
 `
@@ -94,20 +94,20 @@ const listOrganisationChildren = `-- name: ListOrganisationChildren :many
 SELECT
 	id, name, parent_id
 FROM
-	apollo.organisations
+	organisations
 WHERE
 	parent_id = $1
 `
 
-func (q *Queries) ListOrganisationChildren(ctx context.Context, parentID *int32) ([]ApolloOrganisation, error) {
+func (q *Queries) ListOrganisationChildren(ctx context.Context, parentID *int32) ([]Organisation, error) {
 	rows, err := q.db.Query(ctx, listOrganisationChildren, parentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ApolloOrganisation
+	var items []Organisation
 	for rows.Next() {
-		var i ApolloOrganisation
+		var i Organisation
 		if err := rows.Scan(&i.ID, &i.Name, &i.ParentID); err != nil {
 			return nil, err
 		}
@@ -123,18 +123,18 @@ const listOrganisations = `-- name: ListOrganisations :many
 SELECT
     id, name, parent_id
 FROM
-    apollo.organisations
+    organisations
 `
 
-func (q *Queries) ListOrganisations(ctx context.Context) ([]ApolloOrganisation, error) {
+func (q *Queries) ListOrganisations(ctx context.Context) ([]Organisation, error) {
 	rows, err := q.db.Query(ctx, listOrganisations)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ApolloOrganisation
+	var items []Organisation
 	for rows.Next() {
-		var i ApolloOrganisation
+		var i Organisation
 		if err := rows.Scan(&i.ID, &i.Name, &i.ParentID); err != nil {
 			return nil, err
 		}
@@ -150,21 +150,21 @@ const listOrganisationsForUser = `-- name: ListOrganisationsForUser :many
 SELECT
     o.id, o.name, o.parent_id
 FROM
-    apollo.organisations AS o
-    INNER JOIN apollo.organisation_users AS ou ON o.id = ou.organisation_id
+    organisations AS o
+    INNER JOIN organisation_users AS ou ON o.id = ou.organisation_id
 WHERE
     ou.user_id = $1
 `
 
-func (q *Queries) ListOrganisationsForUser(ctx context.Context, userID int32) ([]ApolloOrganisation, error) {
+func (q *Queries) ListOrganisationsForUser(ctx context.Context, userID int32) ([]Organisation, error) {
 	rows, err := q.db.Query(ctx, listOrganisationsForUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ApolloOrganisation
+	var items []Organisation
 	for rows.Next() {
-		var i ApolloOrganisation
+		var i Organisation
 		if err := rows.Scan(&i.ID, &i.Name, &i.ParentID); err != nil {
 			return nil, err
 		}
@@ -180,21 +180,21 @@ const listUsersInOrganisation = `-- name: ListUsersInOrganisation :many
 SELECT
     u.id, u.name, u.email, u.joined, u.admin
 FROM
-    apollo.users AS u
-    INNER JOIN apollo.organisation_users AS ou ON u.id = ou.user_id
+    users AS u
+    INNER JOIN organisation_users AS ou ON u.id = ou.user_id
 WHERE
     ou.organisation_id = $1
 `
 
-func (q *Queries) ListUsersInOrganisation(ctx context.Context, organisationID int32) ([]ApolloUser, error) {
+func (q *Queries) ListUsersInOrganisation(ctx context.Context, organisationID int32) ([]User, error) {
 	rows, err := q.db.Query(ctx, listUsersInOrganisation, organisationID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ApolloUser
+	var items []User
 	for rows.Next() {
-		var i ApolloUser
+		var i User
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -213,7 +213,7 @@ func (q *Queries) ListUsersInOrganisation(ctx context.Context, organisationID in
 }
 
 const removeUserFromOrganisation = `-- name: RemoveUserFromOrganisation :exec
-DELETE FROM apollo.organisation_users
+DELETE FROM organisation_users
 WHERE user_id = $1
     AND organisation_id = $2
 `

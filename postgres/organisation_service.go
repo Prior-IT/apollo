@@ -154,7 +154,7 @@ func (o *OrganisationService) RemoveUser(
 	return o.q.RemoveUserFromOrganisation(ctx, int32(UserID), int32(OrgID))
 }
 
-func convertOrganisation(organisation sqlc.ApolloOrganisation) (*core.Organisation, error) {
+func convertOrganisation(organisation sqlc.Organisation) (*core.Organisation, error) {
 	id := core.OrganisationID(organisation.ID)
 	var parentID *core.OrganisationID
 	if organisation.ParentID != nil {
@@ -168,7 +168,7 @@ func convertOrganisation(organisation sqlc.ApolloOrganisation) (*core.Organisati
 	}, nil
 }
 
-func convertOrganisationList(organisations []sqlc.ApolloOrganisation) ([]core.Organisation, error) {
+func convertOrganisationList(organisations []sqlc.Organisation) ([]core.Organisation, error) {
 	list := make([]core.Organisation, len(organisations))
 	for i, v := range organisations {
 		o, err := convertOrganisation(v)

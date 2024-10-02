@@ -11,7 +11,7 @@ import (
 )
 
 func TestOrganisationService(t *testing.T) {
-	db := tests.DB()
+	db := tests.DB(t)
 	service := postgres.NewOrganisationService(db)
 	UserService := postgres.NewUserService(db)
 	defer tests.DeleteAllOrganisations(service)
@@ -37,7 +37,13 @@ func TestOrganisationService(t *testing.T) {
 			newOrg, err := service.CreateOrganisation(ctx, tests.Faker.BS(), &organisation1.ID)
 			tests.Check(err)
 			assert.NotNilf(t, newOrg, "Organisation with index %d should be created correctly", idx)
-			assert.Equalf(t, *newOrg.ParentID, organisation1.ID, "Organisation 1 should be the parent of organisation with index %d", idx)
+			assert.Equalf(
+				t,
+				*newOrg.ParentID,
+				organisation1.ID,
+				"Organisation 1 should be the parent of organisation with index %d",
+				idx,
+			)
 		}
 	})
 
@@ -61,8 +67,17 @@ func TestOrganisationService(t *testing.T) {
 
 		organisation2, err := service.GetOrganisation(ctx, organisation.ID)
 		assert.NotNil(t, err, "Getting a deleted organisation should return an error")
-		assert.Nil(t, organisation2, "Getting a deleted organisation should return nil for the organisation")
-		assert.ErrorIs(t, err, core.ErrNotFound, "Getting a deleted organisation should return ErrNotFound")
+		assert.Nil(
+			t,
+			organisation2,
+			"Getting a deleted organisation should return nil for the organisation",
+		)
+		assert.ErrorIs(
+			t,
+			err,
+			core.ErrNotFound,
+			"Getting a deleted organisation should return ErrNotFound",
+		)
 	})
 
 	t.Run("ok: delete organisation removes children", func(t *testing.T) {
@@ -74,8 +89,17 @@ func TestOrganisationService(t *testing.T) {
 
 		org2bis, err := service.GetOrganisation(ctx, org2.ID)
 		assert.NotNil(t, err, "Getting an organisation with deleted parent should return an error")
-		assert.Nil(t, org2bis, "Getting an organisation with deleted parent should return nil for the organisation")
-		assert.ErrorIs(t, err, core.ErrNotFound, "Getting an organisation with deleted parent should return ErrNotFound")
+		assert.Nil(
+			t,
+			org2bis,
+			"Getting an organisation with deleted parent should return nil for the organisation",
+		)
+		assert.ErrorIs(
+			t,
+			err,
+			core.ErrNotFound,
+			"Getting an organisation with deleted parent should return ErrNotFound",
+		)
 	})
 
 	t.Run("ok: list organisation children return only own children", func(t *testing.T) {

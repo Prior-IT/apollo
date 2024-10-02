@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE apollo.account_cache (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
+CREATE TABLE account_cache (
+    id uuid NOT NULL DEFAULT gen_random_uuid (),
     name text,
     email text,
     provider text NOT NULL,
@@ -13,6 +13,6 @@ CREATE TABLE apollo.account_cache (
 -- +goose StatementEnd
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE IF EXISTS apollo.account_cache;
+DROP TABLE IF EXISTS account_cache;
 
 -- +goose StatementEnd

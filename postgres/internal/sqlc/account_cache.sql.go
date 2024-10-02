@@ -12,7 +12,7 @@ import (
 )
 
 const createAccountCache = `-- name: CreateAccountCache :one
-INSERT INTO apollo.account_cache (name, email, provider, provider_id)
+INSERT INTO account_cache (name, email, provider, provider_id)
     VALUES ($1, $2, $3, $4)
 RETURNING
     id, name, email, provider, provider_id, created
@@ -25,14 +25,14 @@ type CreateAccountCacheParams struct {
 	ProviderID string
 }
 
-func (q *Queries) CreateAccountCache(ctx context.Context, arg CreateAccountCacheParams) (ApolloAccountCache, error) {
+func (q *Queries) CreateAccountCache(ctx context.Context, arg CreateAccountCacheParams) (AccountCache, error) {
 	row := q.db.QueryRow(ctx, createAccountCache,
 		arg.Name,
 		arg.Email,
 		arg.Provider,
 		arg.ProviderID,
 	)
-	var i ApolloAccountCache
+	var i AccountCache
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -45,7 +45,7 @@ func (q *Queries) CreateAccountCache(ctx context.Context, arg CreateAccountCache
 }
 
 const deleteAccountCache = `-- name: DeleteAccountCache :exec
-DELETE FROM apollo.account_cache
+DELETE FROM account_cache
 WHERE id = $1
 `
 
@@ -55,7 +55,7 @@ func (q *Queries) DeleteAccountCache(ctx context.Context, id pgtype.UUID) error 
 }
 
 const deleteAccountCacheOldEntries = `-- name: DeleteAccountCacheOldEntries :exec
-DELETE FROM apollo.account_cache
+DELETE FROM account_cache
 WHERE created < NOW() - $1::interval
 `
 
@@ -68,15 +68,15 @@ const getAccountCacheForID = `-- name: GetAccountCacheForID :one
 SELECT
     id, name, email, provider, provider_id, created
 FROM
-    apollo.account_cache
+    account_cache
 WHERE
     id = $1
 LIMIT 1
 `
 
-func (q *Queries) GetAccountCacheForID(ctx context.Context, id pgtype.UUID) (ApolloAccountCache, error) {
+func (q *Queries) GetAccountCacheForID(ctx context.Context, id pgtype.UUID) (AccountCache, error) {
 	row := q.db.QueryRow(ctx, getAccountCacheForID, id)
-	var i ApolloAccountCache
+	var i AccountCache
 	err := row.Scan(
 		&i.ID,
 		&i.Name,

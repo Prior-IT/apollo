@@ -14,7 +14,7 @@ import (
 )
 
 //go:embed migrations/*.sql
-var migrations embed.FS
+var embedMigrations embed.FS
 
 type DB struct {
 	*pgxpool.Pool
@@ -35,11 +35,34 @@ func NewDB(ctx context.Context, connString string) (*DB, error) {
 // pass on unsanitised user input!
 func (db *DB) SwitchSchema(ctx context.Context, schema string) error {
 	slog.Info("Switching postgres schema", "schema", schema)
-	if _, err := db.Exec(ctx, fmt.Sprintf("BEGIN; SELECT pg_advisory_xact_lock(1); CREATE SCHEMA IF NOT EXISTS %s; COMMIT;", schema)); err != nil {
-		return fmt.Errorf("cannot create schema '%v': %w", schema, err)
+	_, err := db.Exec(
+		ctx,
+		fmt.Sprintf(
+			"BEGIN; SELECT pg_advisory_xact_lock(1); CREATE SCHEMA IF NOT EXISTS %s; SET search_path TO %s; COMMIT;",
+			schema,
+			schema,
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("cannot create and switch to schema %q: %w", schema, err)
 	}
-	if _, err := db.Exec(ctx, fmt.Sprintf("SET search_path TO %s;", schema)); err != nil {
-		return fmt.Errorf("cannot set search_path to schema '%v': %w", schema, err)
+	return nil
+}
+
+// Set the search path to the specified value. If the search path contains non-existent schemas, this will error.
+// Beware that the schema here is not sanitised, as such this could be used to do SQL injection and should never
+// pass on unsanitised user input!
+func (db *DB) SetSearchPath(ctx context.Context, path string) error {
+	slog.Info("Changing postgres search path", "search_path", path)
+	_, err := db.Exec(
+		ctx,
+		fmt.Sprintf(
+			"BEGIN; SELECT pg_advisory_xact_lock(1); SET search_path TO %s; COMMIT;",
+			path,
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("cannot set search path to %q: %w", path, err)
 	}
 	return nil
 }
@@ -56,11 +79,31 @@ func (db *DB) DeleteSchema(ctx context.Context, schema string) error {
 }
 
 // Migrate the database using the specified embedded migration folder.
-func (db *DB) Migrate(folder embed.FS) error {
-	fsys, err := fs.Sub(folder, "migrations")
+// "folder" specifies the location of the folder containing sql files within the embed.FS
+// To only run the Apollo migrations, set migrations to nil
+func (db *DB) Migrate(migrations *embed.FS, folder string) error {
+	apollo, err := fs.Sub(embedMigrations, "migrations")
 	if err != nil {
-		return fmt.Errorf("Cannot get filesystem: %w", err)
+		return fmt.Errorf("Cannot get apollo embedFS migrations folder: %w", err)
 	}
+
+	migrateFS := apollo
+
+	if migrations != nil {
+		app, err := fs.Sub(migrations, folder)
+		if err != nil {
+			return fmt.Errorf("Cannot get app embedFS migrations folder: %w", err)
+		}
+
+		combinedFS := combinedFS{
+			fs1: apollo,
+			fs2: app,
+		}
+
+		migrateFS = combinedFS
+
+	}
+
 	sessionLocker, err := lock.NewPostgresSessionLocker(
 		// Timeout after 30min. Try every 15s up to 120 times.
 		lock.WithLockTimeout(15, 120), //nolint:mnd
@@ -75,7 +118,7 @@ func (db *DB) Migrate(folder embed.FS) error {
 	provider, err := goose.NewProvider(
 		goose.DialectPostgres,
 		database,
-		fsys,
+		migrateFS,
 		goose.WithSessionLocker(sessionLocker), // Use session-level advisory lock.
 		goose.WithVerbose(true),                // Enable logging (as with goose.Up)
 	)
@@ -95,18 +138,57 @@ func (db *DB) Migrate(folder embed.FS) error {
 	return nil
 }
 
-// Migrate the database down a single migration using the specified embedded migration folder.
-func (db *DB) MigrateDown(folder embed.FS) error {
-	goose.SetBaseFS(folder)
+// Migrate the database down a single step using the specified embedded migration folder.
+// "folder" specifies the location of the folder containing sql files within the embed.FS
+// To only run the Apollo migrations, set migrations to nil
+func (db *DB) MigrateDown(migrations *embed.FS, folder string) error {
+	apollo, err := fs.Sub(embedMigrations, "migrations")
+	if err != nil {
+		return fmt.Errorf("Cannot get apollo embedFS migrations folder: %w", err)
+	}
 
-	if err := goose.SetDialect("postgres"); err != nil {
-		return fmt.Errorf("cannot change dialect to postgres: %w", err)
+	migrateFS := apollo
+
+	if migrations != nil {
+
+		app, err := fs.Sub(migrations, folder)
+		if err != nil {
+			return fmt.Errorf("Cannot get app embedFS migrations folder: %w", err)
+		}
+
+		combinedFS := combinedFS{
+			fs1: apollo,
+			fs2: app,
+		}
+
+		migrateFS = combinedFS
+	}
+
+	sessionLocker, err := lock.NewPostgresSessionLocker(
+		// Timeout after 30min. Try every 15s up to 120 times.
+		lock.WithLockTimeout(15, 120), //nolint:mnd
+	)
+	if err != nil {
+		return fmt.Errorf("Cannot use session lock: %w", err)
 	}
 
 	database := stdlib.OpenDBFromPool(db.Pool)
 
-	if err := goose.Down(database, "migrations"); err != nil {
-		return fmt.Errorf("cannot run database migrations: %w", err)
+	// Create custom goose provider
+	provider, err := goose.NewProvider(
+		goose.DialectPostgres,
+		database,
+		migrateFS,
+		goose.WithSessionLocker(sessionLocker), // Use session-level advisory lock.
+		goose.WithVerbose(true),                // Enable logging (as with goose.Up)
+	)
+	if err != nil {
+		return fmt.Errorf("Cannot create goose provider: %w", err)
+	}
+
+	_, err = provider.Down(context.Background())
+	if err != nil {
+		return fmt.Errorf("cannot run database down migrations: %w", err)
 	}
 
 	if err := database.Close(); err != nil {
@@ -116,38 +198,26 @@ func (db *DB) MigrateDown(folder embed.FS) error {
 	return nil
 }
 
-// Migrate the Apollo models in the database, if required.
-// Note: this will always return the db connection back to the "public" schema,
-// use [SwitchSchema] afterwards if you don't want this.
-func (db *DB) MigrateApollo(ctx context.Context) error {
-	if err := db.SwitchSchema(ctx, "apollo"); err != nil {
-		return fmt.Errorf("cannot switch to the apollo schema: %w", err)
-	}
-
-	if err := db.Migrate(migrations); err != nil {
-		return fmt.Errorf("cannot run apollo migrations: %w", err)
-	}
-
-	if err := db.SwitchSchema(ctx, "public"); err != nil {
-		return fmt.Errorf("cannot switch back to the public schema: %w", err)
-	}
-	return nil
+// combinedFS is a custom filesystem that combines two embed.FS instances into a single, larger filesystem
+type combinedFS struct {
+	fs1, fs2 fs.FS
 }
 
-// Migrate the Apollo models down a single migration in the database
-// Note: this will always return the db connection back to the "public" schema,
-// use [SwitchSchema] afterwards if you don't want this.
-func (db *DB) MigrateApolloDown(ctx context.Context) error {
-	if err := db.SwitchSchema(ctx, "apollo"); err != nil {
-		return fmt.Errorf("cannot switch to the apollo schema: %w", err)
+func (c combinedFS) Open(name string) (fs.File, error) {
+	f, err := c.fs1.Open(name)
+	if err == nil {
+		return f, nil
+	}
+	return c.fs2.Open(name)
+}
+
+func (c combinedFS) ReadDir(name string) ([]fs.DirEntry, error) {
+	entries1, err1 := fs.ReadDir(c.fs1, name)
+	entries2, err2 := fs.ReadDir(c.fs2, name)
+
+	if err1 != nil && err2 != nil {
+		return nil, fmt.Errorf("failed to read directory from both filesystems: %v, %v", err1, err2)
 	}
 
-	if err := db.MigrateDown(migrations); err != nil {
-		return fmt.Errorf("cannot run apollo migrations: %w", err)
-	}
-
-	if err := db.SwitchSchema(ctx, "public"); err != nil {
-		return fmt.Errorf("cannot switch back to the public schema: %w", err)
-	}
-	return nil
+	return append(entries1, entries2...), nil
 }

@@ -12,7 +12,7 @@ import (
 )
 
 func TestAddressService(t *testing.T) {
-	db := tests.DB()
+	db := tests.DB(t)
 	service := postgres.NewAddressService(db)
 	ctx := context.Background()
 	defer tests.DeleteAllAddresses(service)
@@ -30,7 +30,12 @@ func TestAddressService(t *testing.T) {
 		address, err := service.CreateAddress(ctx, createData)
 		tests.Check(err)
 		assert.NotNil(t, address, "The first address should be created correctly")
-		assert.Equal(t, *address.ExtraLine, fakeAddress.State, "The extraLine field should be created correctly")
+		assert.Equal(
+			t,
+			*address.ExtraLine,
+			fakeAddress.State,
+			"The extraLine field should be created correctly",
+		)
 
 		createData.ExtraLine = nil
 		address, err = service.CreateAddress(ctx, createData)
@@ -69,7 +74,12 @@ func TestAddressService(t *testing.T) {
 			if typeOfAddress.Field(i).Name == "City" {
 				continue
 			}
-			assert.Equal(t, a.Field(i).Interface(), u.Field(i).Interface(), "Other fields should remain unchanged")
+			assert.Equal(
+				t,
+				a.Field(i).Interface(),
+				u.Field(i).Interface(),
+				"Other fields should remain unchanged",
+			)
 		}
 	})
 
@@ -91,6 +101,11 @@ func TestAddressService(t *testing.T) {
 		address, err = service.GetAddress(ctx, address.ID)
 		assert.NotNil(t, err, "Getting a deleted address should return an error")
 		assert.Nil(t, address, "Getting a deleted address should return nil for the address")
-		assert.ErrorIs(t, err, core.ErrNotFound, "Getting a deleted address should return ErrNotFound")
+		assert.ErrorIs(
+			t,
+			err,
+			core.ErrNotFound,
+			"Getting a deleted address should return ErrNotFound",
+		)
 	})
 }

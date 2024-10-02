@@ -10,7 +10,7 @@ import (
 )
 
 const createAccount = `-- name: CreateAccount :one
-INSERT INTO apollo.accounts (user_id, provider, provider_id)
+INSERT INTO accounts (user_id, provider, provider_id)
     VALUES ($1, $2, $3)
 RETURNING
     user_id, provider, provider_id
@@ -22,15 +22,15 @@ type CreateAccountParams struct {
 	ProviderID string
 }
 
-func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (ApolloAccount, error) {
+func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
 	row := q.db.QueryRow(ctx, createAccount, arg.UserID, arg.Provider, arg.ProviderID)
-	var i ApolloAccount
+	var i Account
 	err := row.Scan(&i.UserID, &i.Provider, &i.ProviderID)
 	return i, err
 }
 
 const deleteAccount = `-- name: DeleteAccount :exec
-DELETE FROM apollo.accounts
+DELETE FROM accounts
 WHERE provider = $1 AND provider_id = $2
 `
 
@@ -43,17 +43,17 @@ const getUserForProvider = `-- name: GetUserForProvider :one
 SELECT
     users.id, users.name, users.email, users.joined, users.admin
 FROM
-    apollo.users
-    INNER JOIN apollo.accounts ON users.id = accounts.user_id
+    users
+    INNER JOIN accounts ON users.id = accounts.user_id
 WHERE
     accounts.provider = $1
     AND accounts.provider_id = $2
 LIMIT 1
 `
 
-func (q *Queries) GetUserForProvider(ctx context.Context, provider string, providerID string) (ApolloUser, error) {
+func (q *Queries) GetUserForProvider(ctx context.Context, provider string, providerID string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserForProvider, provider, providerID)
-	var i ApolloUser
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,

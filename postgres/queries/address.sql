@@ -2,24 +2,24 @@
 SELECT
 	*
 FROM
-	apollo.address
+	address
 WHERE
 	id = $1
 LIMIT 1;
 
 -- name: CreateAddress :one
-INSERT INTO apollo.address (street, number, extra_line, postal_code, city, country)
+INSERT INTO address (street, number, extra_line, postal_code, city, country)
 	VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING
 	*;
 
 -- name: DeleteAddress :exec
-DELETE FROM apollo.address
+DELETE FROM address
 WHERE id = $1;
 
 -- name: UpdateAddress :one
 UPDATE
-	apollo.address
+	address
 SET
 	street = COALESCE(sqlc.narg(street), street),
 	number = COALESCE(sqlc.narg(number), number),
@@ -36,4 +36,4 @@ RETURNING
 SELECT
 	*
 FROM
-	apollo.address;
+	address;

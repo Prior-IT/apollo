@@ -10,7 +10,7 @@ import (
 )
 
 const createAddress = `-- name: CreateAddress :one
-INSERT INTO apollo.address (street, number, extra_line, postal_code, city, country)
+INSERT INTO address (street, number, extra_line, postal_code, city, country)
 	VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING
 	id, street, number, postal_code, city, country, extra_line
@@ -25,7 +25,7 @@ type CreateAddressParams struct {
 	Country    string
 }
 
-func (q *Queries) CreateAddress(ctx context.Context, arg CreateAddressParams) (ApolloAddress, error) {
+func (q *Queries) CreateAddress(ctx context.Context, arg CreateAddressParams) (Address, error) {
 	row := q.db.QueryRow(ctx, createAddress,
 		arg.Street,
 		arg.Number,
@@ -34,7 +34,7 @@ func (q *Queries) CreateAddress(ctx context.Context, arg CreateAddressParams) (A
 		arg.City,
 		arg.Country,
 	)
-	var i ApolloAddress
+	var i Address
 	err := row.Scan(
 		&i.ID,
 		&i.Street,
@@ -48,7 +48,7 @@ func (q *Queries) CreateAddress(ctx context.Context, arg CreateAddressParams) (A
 }
 
 const deleteAddress = `-- name: DeleteAddress :exec
-DELETE FROM apollo.address
+DELETE FROM address
 WHERE id = $1
 `
 
@@ -61,15 +61,15 @@ const getAddress = `-- name: GetAddress :one
 SELECT
 	id, street, number, postal_code, city, country, extra_line
 FROM
-	apollo.address
+	address
 WHERE
 	id = $1
 LIMIT 1
 `
 
-func (q *Queries) GetAddress(ctx context.Context, id int32) (ApolloAddress, error) {
+func (q *Queries) GetAddress(ctx context.Context, id int32) (Address, error) {
 	row := q.db.QueryRow(ctx, getAddress, id)
-	var i ApolloAddress
+	var i Address
 	err := row.Scan(
 		&i.ID,
 		&i.Street,
@@ -86,18 +86,18 @@ const listAddresses = `-- name: ListAddresses :many
 SELECT
 	id, street, number, postal_code, city, country, extra_line
 FROM
-	apollo.address
+	address
 `
 
-func (q *Queries) ListAddresses(ctx context.Context) ([]ApolloAddress, error) {
+func (q *Queries) ListAddresses(ctx context.Context) ([]Address, error) {
 	rows, err := q.db.Query(ctx, listAddresses)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ApolloAddress
+	var items []Address
 	for rows.Next() {
-		var i ApolloAddress
+		var i Address
 		if err := rows.Scan(
 			&i.ID,
 			&i.Street,
@@ -119,7 +119,7 @@ func (q *Queries) ListAddresses(ctx context.Context) ([]ApolloAddress, error) {
 
 const updateAddress = `-- name: UpdateAddress :one
 UPDATE
-	apollo.address
+	address
 SET
 	street = COALESCE($2, street),
 	number = COALESCE($3, number),
@@ -143,7 +143,7 @@ type UpdateAddressParams struct {
 	Country    *string
 }
 
-func (q *Queries) UpdateAddress(ctx context.Context, arg UpdateAddressParams) (ApolloAddress, error) {
+func (q *Queries) UpdateAddress(ctx context.Context, arg UpdateAddressParams) (Address, error) {
 	row := q.db.QueryRow(ctx, updateAddress,
 		arg.ID,
 		arg.Street,
@@ -153,7 +153,7 @@ func (q *Queries) UpdateAddress(ctx context.Context, arg UpdateAddressParams) (A
 		arg.City,
 		arg.Country,
 	)
-	var i ApolloAddress
+	var i Address
 	err := row.Scan(
 		&i.ID,
 		&i.Street,

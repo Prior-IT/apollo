@@ -10,15 +10,15 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO apollo.users (name, email)
+INSERT INTO users (name, email)
     VALUES ($1, $2)
 RETURNING
     id, name, email, joined, admin
 `
 
-func (q *Queries) CreateUser(ctx context.Context, name string, email string) (ApolloUser, error) {
+func (q *Queries) CreateUser(ctx context.Context, name string, email string) (User, error) {
 	row := q.db.QueryRow(ctx, createUser, name, email)
-	var i ApolloUser
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -30,7 +30,7 @@ func (q *Queries) CreateUser(ctx context.Context, name string, email string) (Ap
 }
 
 const deleteUser = `-- name: DeleteUser :exec
-DELETE FROM apollo.users
+DELETE FROM users
 WHERE id = $1
 `
 
@@ -43,7 +43,7 @@ const getAmountOfUsers = `-- name: GetAmountOfUsers :one
 SELECT
     COUNT(*)
 FROM
-    apollo.users
+    users
 `
 
 func (q *Queries) GetAmountOfUsers(ctx context.Context) (int64, error) {
@@ -57,15 +57,15 @@ const getUser = `-- name: GetUser :one
 SELECT
     id, name, email, joined, admin
 FROM
-    apollo.users
+    users
 WHERE
     id = $1
 LIMIT 1
 `
 
-func (q *Queries) GetUser(ctx context.Context, id int32) (ApolloUser, error) {
+func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 	row := q.db.QueryRow(ctx, getUser, id)
-	var i ApolloUser
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -80,20 +80,20 @@ const listUsers = `-- name: ListUsers :many
 SELECT
     id, name, email, joined, admin
 FROM
-    apollo.users
+    users
 ORDER BY
     RANDOM()
 `
 
-func (q *Queries) ListUsers(ctx context.Context) ([]ApolloUser, error) {
+func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 	rows, err := q.db.Query(ctx, listUsers)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ApolloUser
+	var items []User
 	for rows.Next() {
-		var i ApolloUser
+		var i User
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -113,7 +113,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]ApolloUser, error) {
 
 const updateUser = `-- name: UpdateUser :one
 UPDATE
-    apollo.users
+    users
 SET
     name = COALESCE($2, name),
     email = COALESCE($3, email)
@@ -129,9 +129,9 @@ type UpdateUserParams struct {
 	Email *string
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (ApolloUser, error) {
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, updateUser, arg.ID, arg.Name, arg.Email)
-	var i ApolloUser
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -144,7 +144,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (ApolloU
 
 const updateUserAdmin = `-- name: UpdateUserAdmin :exec
 UPDATE
-    apollo.users
+    users
 SET
     admin = $2
 WHERE

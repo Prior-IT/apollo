@@ -17,7 +17,7 @@ type CreateUserTest struct {
 }
 
 func TestUserService(t *testing.T) {
-	db := tests.DB()
+	db := tests.DB(t)
 	service := postgres.NewUserService(db)
 	tests.DeleteAllUsers(service)
 	defer tests.DeleteAllUsers(service)

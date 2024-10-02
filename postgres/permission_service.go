@@ -58,7 +58,7 @@ func (p *PermissionService) CreatePermissionGroup(
 	defer tx.Rollback(ctx) //nolint:errcheck // See tx.Rollback() documentation
 	q := sqlc.New(tx)
 
-	var NewGroup sqlc.ApolloPermissiongroup
+	var NewGroup sqlc.Permissiongroup
 	if Group.ID > 0 {
 		NewGroup, err = q.CreatePermissionGroupWithID(ctx, int32(Group.ID), &Group.Name)
 		if err != nil {
@@ -371,7 +371,7 @@ func (p *PermissionService) GetUserPermissionsForOrganisation(
 }
 
 func combinePermissionGroup(
-	group sqlc.ApolloPermissiongroup,
+	group sqlc.Permissiongroup,
 	perms []sqlc.GetPermissionsForGroupRow,
 ) permissions.PermissionGroup {
 	Name := ""

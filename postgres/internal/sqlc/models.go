@@ -8,13 +8,13 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type ApolloAccount struct {
+type Account struct {
 	UserID     int32
 	Provider   string
 	ProviderID string
 }
 
-type ApolloAccountCache struct {
+type AccountCache struct {
 	ID         pgtype.UUID
 	Name       *string
 	Email      *string
@@ -23,7 +23,7 @@ type ApolloAccountCache struct {
 	Created    pgtype.Timestamptz
 }
 
-type ApolloAddress struct {
+type Address struct {
 	ID         int32
 	Street     string
 	Number     string
@@ -33,39 +33,39 @@ type ApolloAddress struct {
 	ExtraLine  *string
 }
 
-type ApolloOrganisation struct {
+type Organisation struct {
 	ID       int32
 	Name     string
 	ParentID *int32
 }
 
-type ApolloOrganisationUser struct {
+type OrganisationUser struct {
 	ID             int32
 	UserID         int32
 	OrganisationID int32
 }
 
-type ApolloOrganisationUsersPermissiongroup struct {
+type OrganisationUsersPermissiongroup struct {
 	OrganisationUsersID int32
 	PermissionGroupID   int32
 }
 
-type ApolloPermission struct {
+type Permission struct {
 	Name string
 }
 
-type ApolloPermissiongroup struct {
+type Permissiongroup struct {
 	ID   int32
 	Name *string
 }
 
-type ApolloPermissiongroupPermission struct {
+type PermissiongroupPermission struct {
 	GroupID    int32
 	Permission string
 	Enabled    bool
 }
 
-type ApolloUser struct {
+type User struct {
 	ID     int32
 	Name   string
 	Email  string
@@ -73,7 +73,7 @@ type ApolloUser struct {
 	Admin  bool
 }
 
-type ApolloUserPermissiongroupMembership struct {
+type UserPermissiongroupMembership struct {
 	GroupID int32
 	UserID  int32
 }

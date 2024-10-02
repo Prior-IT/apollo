@@ -94,7 +94,7 @@ func (a *AddressService) ListAddresses(ctx context.Context) ([]core.Address, err
 	return convertAddressList(addresses)
 }
 
-func convertAddress(address sqlc.ApolloAddress) (*core.Address, error) {
+func convertAddress(address sqlc.Address) (*core.Address, error) {
 	id := core.AddressID(address.ID)
 	return &core.Address{
 		ID:         id,
@@ -107,7 +107,7 @@ func convertAddress(address sqlc.ApolloAddress) (*core.Address, error) {
 	}, nil
 }
 
-func convertAddressList(addresss []sqlc.ApolloAddress) ([]core.Address, error) {
+func convertAddressList(addresss []sqlc.Address) ([]core.Address, error) {
 	list := make([]core.Address, len(addresss))
 	for i, v := range addresss {
 		o, err := convertAddress(v)
