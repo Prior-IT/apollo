@@ -17,6 +17,8 @@ const (
 	ctxSession
 	ctxConfig
 	ctxIsAdmin
+	ctxNewCSRFToken
+	ctxOldCSRFToken
 )
 
 func IsLoggedIn(ctx context.Context) bool {
@@ -54,4 +56,13 @@ func Session(ctx context.Context) *sessions.Session {
 
 func Config(ctx context.Context) *config.Config {
 	return ctx.Value(ctxConfig).(*config.Config)
+}
+
+func CSRF(ctx context.Context) string {
+	return ctx.Value(ctxNewCSRFToken).(string)
+}
+
+func oldCSRF(ctx context.Context) (string, bool) {
+	val, ok := ctx.Value(ctxOldCSRFToken).(string)
+	return val, ok
 }

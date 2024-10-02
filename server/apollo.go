@@ -17,6 +17,11 @@ import (
 	"github.com/prior-it/apollo/permissions"
 )
 
+var (
+	ErrCSRFNotFound = errors.New("CSRF token not found")
+	ErrCSRFFail     = errors.New("CSRF token does not match")
+)
+
 type Apollo struct {
 	Writer       http.ResponseWriter
 	Request      *http.Request
@@ -345,6 +350,30 @@ func (apollo *Apollo) HasStrict(permission permissions.Permission) bool {
 		return false
 	}
 	return ok
+}
+
+// CheckCSRF will check if a CSRF token was added to the requests form body and if that token matches the
+// token specified in the CSRF cookie. If either of these are false, this will return an error. If the correct CSRF
+// token was specified, this will return nil.
+// Note that currently only POST requests using form values are supported.
+// GET requests cannot use CSRF since that's less safe.
+// JSON API requests can also not use CSRF at this moment, but that might change in the future using a CSRF header, if
+// that need would ever arise.
+func (apollo *Apollo) CheckCSRF() error {
+	sessionToken, ok := oldCSRF(apollo.Context())
+
+	// No (valid) token in session
+	if !ok || len(sessionToken) == 0 {
+		return ErrCSRFNotFound
+	}
+
+	token := apollo.FormValue("_csrf_token")
+
+	if token != sessionToken {
+		return ErrCSRFFail
+	}
+
+	return nil
 }
 
 // Redirect will return a response that redirects the user to the specified url.
