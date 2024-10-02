@@ -87,7 +87,7 @@ type SentryConfig struct {
 
 type DatabaseConfig struct {
 	URL    string
-	Schema string
+	Schema string `default:"public"`
 }
 
 type LogConfig struct {
