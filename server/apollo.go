@@ -17,6 +17,8 @@ import (
 	"github.com/prior-it/apollo/permissions"
 )
 
+const CsrfName = "_csrf_token"
+
 var (
 	ErrCSRFNotFound = errors.New("CSRF token not found")
 	ErrCSRFFail     = errors.New("CSRF token does not match")
@@ -367,7 +369,7 @@ func (apollo *Apollo) CheckCSRF() error {
 		return ErrCSRFNotFound
 	}
 
-	token := apollo.FormValue("_csrf_token")
+	token := apollo.FormValue(CsrfName)
 
 	if token != sessionToken {
 		return ErrCSRFFail
