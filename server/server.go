@@ -114,6 +114,10 @@ func (server *Server[state]) WithConfig(cfg *config.Config) *Server[state] {
 	return server
 }
 
+func (server *Server[state]) State() state {
+	return server.state
+}
+
 func (server *Server[state]) NewApollo(w http.ResponseWriter, r *http.Request) *Apollo {
 	apollo := Apollo{
 		Writer:      w,
