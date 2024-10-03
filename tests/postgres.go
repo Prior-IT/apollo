@@ -24,18 +24,11 @@ func DB(t *testing.T) *postgres.DB {
 		log.Printf("Could not load the .env file: %v", err)
 	}
 	url := os.Getenv("DATABASE_URL")
-	db, err := postgres.NewDB(ctx, url)
-	if err != nil {
-		t.Fatal(
-			"To test database functionality, set the DATABASE_URL env variable to a valid database",
-		)
-	}
-
 	dbid := rand.Int32()
 	schema := fmt.Sprintf("tests_%v", dbid)
-	err = db.SwitchSchema(ctx, schema)
+	db, err := postgres.NewDB(ctx, url, schema)
 	if err != nil {
-		t.Fatalf("Cannot change to test schema: %v", err)
+		t.Fatalf("Could not create database connection: %v", err)
 	}
 
 	err = db.Migrate(nil, "")

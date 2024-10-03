@@ -86,7 +86,7 @@ func Full[state BootstrappedState[state]](
 	}
 
 	// Connect to the database
-	db, err := postgres.NewDB(context.Background(), cfg.Database.URL)
+	db, err := postgres.NewDB(context.Background(), cfg.Database.URL, cfg.Database.Schema)
 	if err != nil {
 		logger.Error("Could not initialize database", "error", err)
 		os.Exit(1)
