@@ -3,7 +3,7 @@ module github.com/prior-it/apollo
 go 1.23
 
 require (
-	github.com/a-h/templ v0.2.747
+	github.com/a-h/templ v0.2.778
 	github.com/biter777/countries v1.7.5
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/go-chi/httplog/v2 v2.0.11
@@ -43,7 +43,7 @@ require (
 	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/sys v0.23.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
