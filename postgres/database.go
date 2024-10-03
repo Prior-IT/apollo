@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
-	"github.com/pressly/goose/v3/lock"
 )
 
 //go:embed migrations/*.sql
@@ -38,7 +37,7 @@ func (db *DB) SwitchSchema(ctx context.Context, schema string) error {
 	_, err := db.Exec(
 		ctx,
 		fmt.Sprintf(
-			"BEGIN; SELECT pg_advisory_xact_lock(1); CREATE SCHEMA IF NOT EXISTS %s; SET search_path TO %s; COMMIT;",
+			"CREATE SCHEMA IF NOT EXISTS %s; SET search_path TO %s;",
 			schema,
 			schema,
 		),
@@ -56,10 +55,7 @@ func (db *DB) SetSearchPath(ctx context.Context, path string) error {
 	slog.Info("Changing postgres search path", "search_path", path)
 	_, err := db.Exec(
 		ctx,
-		fmt.Sprintf(
-			"BEGIN; SELECT pg_advisory_xact_lock(1); SET search_path TO %s; COMMIT;",
-			path,
-		),
+		"SET search_path TO "+path,
 	)
 	if err != nil {
 		return fmt.Errorf("cannot set search path to %q: %w", path, err)
@@ -104,14 +100,6 @@ func (db *DB) Migrate(migrations *embed.FS, folder string) error {
 
 	}
 
-	sessionLocker, err := lock.NewPostgresSessionLocker(
-		// Timeout after 30min. Try every 15s up to 120 times.
-		lock.WithLockTimeout(15, 120), //nolint:mnd
-	)
-	if err != nil {
-		return fmt.Errorf("Cannot use session lock: %w", err)
-	}
-
 	database := stdlib.OpenDBFromPool(db.Pool)
 
 	// Create custom goose provider
@@ -119,8 +107,7 @@ func (db *DB) Migrate(migrations *embed.FS, folder string) error {
 		goose.DialectPostgres,
 		database,
 		migrateFS,
-		goose.WithSessionLocker(sessionLocker), // Use session-level advisory lock.
-		goose.WithVerbose(true),                // Enable logging (as with goose.Up)
+		goose.WithVerbose(true), // Enable logging (as with goose.Up)
 	)
 	if err != nil {
 		return fmt.Errorf("Cannot create goose provider: %w", err)
@@ -164,14 +151,6 @@ func (db *DB) MigrateDown(migrations *embed.FS, folder string) error {
 		migrateFS = combinedFS
 	}
 
-	sessionLocker, err := lock.NewPostgresSessionLocker(
-		// Timeout after 30min. Try every 15s up to 120 times.
-		lock.WithLockTimeout(15, 120), //nolint:mnd
-	)
-	if err != nil {
-		return fmt.Errorf("Cannot use session lock: %w", err)
-	}
-
 	database := stdlib.OpenDBFromPool(db.Pool)
 
 	// Create custom goose provider
@@ -179,8 +158,7 @@ func (db *DB) MigrateDown(migrations *embed.FS, folder string) error {
 		goose.DialectPostgres,
 		database,
 		migrateFS,
-		goose.WithSessionLocker(sessionLocker), // Use session-level advisory lock.
-		goose.WithVerbose(true),                // Enable logging (as with goose.Up)
+		goose.WithVerbose(true), // Enable logging (as with goose.Up)
 	)
 	if err != nil {
 		return fmt.Errorf("Cannot create goose provider: %w", err)
