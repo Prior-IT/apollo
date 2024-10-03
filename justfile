@@ -1,11 +1,11 @@
 set positional-arguments
 
 # Dependencies
-templ := "github.com/a-h/templ/cmd/templ@v0.2.747"
-air := "github.com/air-verse/air@v1.52.3"
+templ := "github.com/a-h/templ/cmd/templ@v0.2.778"
+air := "github.com/air-verse/air@v1.60.0"
 sqlc := "github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0"
-goose := "github.com/pressly/goose/v3/cmd/goose@v3.21.1"
-tailwind := "tailwindcss@3.4.10"
+goose := "github.com/pressly/goose/v3/cmd/goose@v3.22.1"
+tailwind := "tailwindcss@3.4.13"
 
 default:
   @just --list --justfile {{justfile()}}
