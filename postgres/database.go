@@ -74,13 +74,15 @@ func (db *DB) DeleteSchema(ctx context.Context, schema string) error {
 	return nil
 }
 
-// Migrate the database using the specified embedded migration folder.
-// "folder" specifies the location of the folder containing sql files within the embed.FS
-// To only run the Apollo migrations, set migrations to nil
-func (db *DB) Migrate(migrations *embed.FS, folder string) error {
+// createGooseProvider will create a new goose provider that combines the migrations from the passed embed.FS with
+// the embedded apollo migrations.
+func (db *DB) createGooseProvider(
+	migrations *embed.FS,
+	folder string,
+) (*goose.Provider, error) {
 	apollo, err := fs.Sub(embedMigrations, "migrations")
 	if err != nil {
-		return fmt.Errorf("Cannot get apollo embedFS migrations folder: %w", err)
+		return nil, fmt.Errorf("Cannot get apollo embedFS migrations folder: %w", err)
 	}
 
 	migrateFS := apollo
@@ -88,27 +90,30 @@ func (db *DB) Migrate(migrations *embed.FS, folder string) error {
 	if migrations != nil {
 		app, err := fs.Sub(migrations, folder)
 		if err != nil {
-			return fmt.Errorf("Cannot get app embedFS migrations folder: %w", err)
+			return nil, fmt.Errorf("Cannot get app embedFS migrations folder: %w", err)
 		}
-
 		combinedFS := combinedFS{
 			fs1: apollo,
 			fs2: app,
 		}
-
 		migrateFS = combinedFS
-
 	}
 
 	database := stdlib.OpenDBFromPool(db.Pool)
 
-	// Create custom goose provider
-	provider, err := goose.NewProvider(
+	return goose.NewProvider(
 		goose.DialectPostgres,
 		database,
 		migrateFS,
 		goose.WithVerbose(true), // Enable logging (as with goose.Up)
 	)
+}
+
+// Migrate the database using the specified embedded migration folder.
+// "folder" specifies the location of the folder containing sql files within the embed.FS
+// To only run the Apollo migrations, set migrations to nil
+func (db *DB) Migrate(migrations *embed.FS, folder string) error {
+	provider, err := db.createGooseProvider(migrations, folder)
 	if err != nil {
 		return fmt.Errorf("Cannot create goose provider: %w", err)
 	}
@@ -118,8 +123,8 @@ func (db *DB) Migrate(migrations *embed.FS, folder string) error {
 		return fmt.Errorf("cannot run database migrations: %w", err)
 	}
 
-	if err := database.Close(); err != nil {
-		return fmt.Errorf("cannot close database connection: %w", err)
+	if err := provider.Close(); err != nil {
+		return fmt.Errorf("cannot close goose provider connection: %w", err)
 	}
 
 	return nil
@@ -129,37 +134,7 @@ func (db *DB) Migrate(migrations *embed.FS, folder string) error {
 // "folder" specifies the location of the folder containing sql files within the embed.FS
 // To only run the Apollo migrations, set migrations to nil
 func (db *DB) MigrateDown(migrations *embed.FS, folder string) error {
-	apollo, err := fs.Sub(embedMigrations, "migrations")
-	if err != nil {
-		return fmt.Errorf("Cannot get apollo embedFS migrations folder: %w", err)
-	}
-
-	migrateFS := apollo
-
-	if migrations != nil {
-
-		app, err := fs.Sub(migrations, folder)
-		if err != nil {
-			return fmt.Errorf("Cannot get app embedFS migrations folder: %w", err)
-		}
-
-		combinedFS := combinedFS{
-			fs1: apollo,
-			fs2: app,
-		}
-
-		migrateFS = combinedFS
-	}
-
-	database := stdlib.OpenDBFromPool(db.Pool)
-
-	// Create custom goose provider
-	provider, err := goose.NewProvider(
-		goose.DialectPostgres,
-		database,
-		migrateFS,
-		goose.WithVerbose(true), // Enable logging (as with goose.Up)
-	)
+	provider, err := db.createGooseProvider(migrations, folder)
 	if err != nil {
 		return fmt.Errorf("Cannot create goose provider: %w", err)
 	}
@@ -169,8 +144,8 @@ func (db *DB) MigrateDown(migrations *embed.FS, folder string) error {
 		return fmt.Errorf("cannot run database down migrations: %w", err)
 	}
 
-	if err := database.Close(); err != nil {
-		return fmt.Errorf("cannot close database connection: %w", err)
+	if err := provider.Close(); err != nil {
+		return fmt.Errorf("cannot close goose provider connection: %w", err)
 	}
 
 	return nil
