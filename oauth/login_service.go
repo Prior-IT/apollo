@@ -121,6 +121,11 @@ func (s *LoginService) LoginCallback(
 		if err != nil {
 			return nil, err
 		}
+	case "entraid":
+		userData, err = getEntraIDUser(ctx, tokenData, config.UserURL)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf(
 			"retrieving user data is currently not supported for provider %q",
