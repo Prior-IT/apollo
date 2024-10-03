@@ -22,7 +22,7 @@ type DB struct {
 // Initialise a new database connection. connString should be a valid postgres connection string (such as a postgres-url).
 // The database will use the specified schema, if it exists. If the schema doesn't exist yet, it will be created.
 func NewDB(ctx context.Context, connString, schema string) (*DB, error) {
-	slog.Info("Connecting to postgres database", "connString", connString)
+	slog.Info("Connecting to postgres database", "schema", schema)
 	pool, err := pgxpool.New(ctx, connString)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to postgres database: %w", err)
