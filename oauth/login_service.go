@@ -57,6 +57,7 @@ func (s *LoginService) GetLoginRedirectURL(provider string, callbackURL string) 
 	return url, nil
 }
 
+//nolint:cyclop
 func (s *LoginService) LoginCallback(
 	ctx context.Context,
 	provider string,
