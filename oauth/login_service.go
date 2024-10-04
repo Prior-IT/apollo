@@ -57,6 +57,7 @@ func (s *LoginService) GetLoginRedirectURL(provider string, callbackURL string) 
 	return url, nil
 }
 
+//nolint:cyclop
 func (s *LoginService) LoginCallback(
 	ctx context.Context,
 	provider string,
@@ -118,6 +119,11 @@ func (s *LoginService) LoginCallback(
 	switch provider {
 	case "github":
 		userData, err = getGithubUser(ctx, tokenData, config.UserURL)
+		if err != nil {
+			return nil, err
+		}
+	case "entraid":
+		userData, err = getEntraIDUser(ctx, tokenData, config.UserURL)
 		if err != nil {
 			return nil, err
 		}
