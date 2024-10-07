@@ -174,8 +174,8 @@ func (server *Server[state]) AttachDefaultMiddleware() {
 		),
 		// @TODO: Cookie store
 		server.SessionMiddleware(),
-		// @TODO: Page caching
 		server.CSRFTokenMiddleware(),
+		// @TODO: Page caching
 		server.ContextMiddleware,
 	)
 }

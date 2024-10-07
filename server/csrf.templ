@@ -1,0 +1,19 @@
+package server
+
+
+templ CSRF() {
+	@csrfInput(false)
+}
+
+templ csrfInput(oob bool) {
+	<input
+		class="hidden csrf-token"
+		aria-hidden="true"
+		type="hidden"
+		name={ CsrfName }
+		if oob {
+			hx-swap-oob="outerHTML:.csrf-token"
+		}
+		value={ CSRFToken(ctx) }
+	/>
+}
