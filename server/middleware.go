@@ -78,7 +78,10 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 
-			csrfInput(true).Render(ctx, w)
+			err = csrfInput(true).Render(ctx, w)
+			if err != nil {
+				slog.Error("cannot render csrf input", "error", err)
+			}
 		})
 	}
 }
