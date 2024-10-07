@@ -1,12 +1,14 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,6 +31,15 @@ func RequireLogin[state any](apollo *Apollo, _ state) (context.Context, error) {
 	return apollo.Context(), apollo.RequiresLogin()
 }
 
+type wrappedResponseWriter struct {
+	http.ResponseWriter
+	body *bytes.Buffer
+}
+
+func (w wrappedResponseWriter) Write(slice []byte) (int, error) {
+	return w.body.Write(slice)
+}
+
 // CSRFTokenMiddleware injects a csrf token at the end of each request that can be checked on the next request
 // using apollo.CheckCSRF.
 func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handler {
@@ -42,6 +53,7 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if strings.HasPrefix(r.URL.Path, "/static/") || strings.HasPrefix(r.URL.Path, "/apollo/") {
 				next.ServeHTTP(w, r)
+				return
 			}
 			cookie, err := server.sessionStore.Get(r, cookieCSRF)
 			if err != nil {
@@ -76,11 +88,19 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 				slog.Error("cannot set csrf cookie", "error", err)
 			}
 
-			next.ServeHTTP(w, r.WithContext(ctx))
+			wrapped := wrappedResponseWriter{w, bytes.NewBuffer([]byte{})}
 
-			err = csrfInput(true).Render(ctx, w)
+			next.ServeHTTP(wrapped, r.WithContext(ctx))
+
+			err = csrfInput(true).Render(ctx, wrapped)
 			if err != nil {
 				slog.Error("cannot render csrf input", "error", err)
+			}
+
+			w.Header().Add("content-length", strconv.Itoa(wrapped.body.Len()))
+			_, err = w.Write(wrapped.body.Bytes())
+			if err != nil {
+				slog.Error("cannot write response", "error", err)
 			}
 		})
 	}
