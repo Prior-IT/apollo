@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -28,15 +27,6 @@ func noop(next http.Handler) http.Handler {
 // RequireLogin is middleware that requires that any user is logged in before continuing on.
 func RequireLogin[state any](apollo *Apollo, _ state) (context.Context, error) {
 	return apollo.Context(), apollo.RequiresLogin()
-}
-
-type wrappedResponseWriter struct {
-	http.ResponseWriter
-	body *bytes.Buffer
-}
-
-func (w wrappedResponseWriter) Write(slice []byte) (int, error) {
-	return w.body.Write(slice)
 }
 
 // CSRFTokenMiddleware injects a csrf token at the end of each request that can be checked on the next request
