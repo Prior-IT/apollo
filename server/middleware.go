@@ -8,7 +8,6 @@ import (
 	"encoding/gob"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -88,20 +87,12 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 				slog.Error("cannot set csrf cookie", "error", err)
 			}
 
-			wrapped := wrappedResponseWriter{w, bytes.NewBuffer([]byte{})}
-
-			next.ServeHTTP(wrapped, r.WithContext(ctx))
-
-			err = csrfInput(true).Render(ctx, wrapped)
+			err = csrfInput(true).Render(ctx, w)
 			if err != nil {
 				slog.Error("cannot render csrf input", "error", err)
 			}
 
-			w.Header().Add("content-length", strconv.Itoa(wrapped.body.Len()))
-			_, err = w.Write(wrapped.body.Bytes())
-			if err != nil {
-				slog.Error("cannot write response", "error", err)
-			}
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
