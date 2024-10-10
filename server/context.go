@@ -58,7 +58,7 @@ func Config(ctx context.Context) *config.Config {
 	return ctx.Value(ctxConfig).(*config.Config)
 }
 
-func CSRF(ctx context.Context) string {
+func CSRFToken(ctx context.Context) string {
 	return ctx.Value(ctxNewCSRFToken).(string)
 }
 

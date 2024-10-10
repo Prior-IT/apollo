@@ -7,6 +7,7 @@ import (
 	"encoding/gob"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/httplog/v2"
@@ -39,6 +40,10 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, "/static/") || strings.HasPrefix(r.URL.Path, "/apollo/") {
+				next.ServeHTTP(w, r)
+				return
+			}
 			cookie, err := server.sessionStore.Get(r, cookieCSRF)
 			if err != nil {
 				cookie, err = server.sessionStore.New(r, cookieCSRF)
@@ -70,6 +75,11 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 			err = server.sessionStore.Save(r, w, cookie)
 			if err != nil {
 				slog.Error("cannot set csrf cookie", "error", err)
+			}
+
+			err = csrfInput(true).Render(ctx, w)
+			if err != nil {
+				slog.Error("cannot render csrf input", "error", err)
 			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))
