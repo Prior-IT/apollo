@@ -77,12 +77,13 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 				slog.Error("cannot set csrf cookie", "error", err)
 			}
 
+			next.ServeHTTP(w, r.WithContext(ctx))
+
+			csrfInput(true).Render(ctx, w)
 			err = csrfInput(true).Render(ctx, w)
 			if err != nil {
 				slog.Error("cannot render csrf input", "error", err)
 			}
-
-			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
