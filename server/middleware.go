@@ -31,6 +31,8 @@ func RequireLogin[state any](apollo *Apollo, _ state) (context.Context, error) {
 
 // CSRFTokenMiddleware injects a csrf token at the end of each request that can be checked on the next request
 // using apollo.CheckCSRF.
+//
+//nolint:cyclop
 func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handler {
 	if server.sessionStore == nil {
 		slog.Warn(
@@ -40,7 +42,8 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.HasPrefix(r.URL.Path, "/static/") || strings.HasPrefix(r.URL.Path, "/apollo/") {
+			if strings.HasPrefix(r.URL.Path, "/static/") ||
+				strings.HasPrefix(r.URL.Path, "/apollo/") {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -53,10 +56,21 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 				configureCookie(server.cfg, cookie)
 			}
 
-			oldToken, ok := cookie.Values[sessionCSRFToken].(string)
+			var oldToken string
+			tokenCookie, ok := cookie.Values[sessionCSRFToken]
 			if !ok {
-				slog.Error("csrf cookie exists but does not contain a token")
-				// oldToken will be empty which is fine to continue on
+				slog.Warn(
+					"csrf cookie does not contain a token, making oldToken empty",
+					"values",
+					cookie.Values,
+				)
+				oldToken = ""
+			} else {
+				oldToken, ok = tokenCookie.(string)
+				if !ok {
+					slog.Error("csrf cookie token exists but it has an invalid type", "token", tokenCookie)
+					// oldToken will be empty which is fine to continue on
+				}
 			}
 
 			ctx := context.WithValue(r.Context(), ctxOldCSRFToken, oldToken)
