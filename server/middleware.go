@@ -52,20 +52,15 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 			}
 			configureCookie(server.cfg, cookie)
 
-			var oldToken string
+			oldToken := ""
 			tokenCookie, ok := cookie.Values[sessionCSRFToken]
 			if !ok {
-				slog.Warn(
-					"csrf cookie does not contain a token, making oldToken empty",
-					"values",
-					cookie.Values,
-				)
-				oldToken = ""
+				slog.Debug("csrf cookie does not contain a token, all CSRF checks will fail")
 			} else {
 				oldToken, ok = tokenCookie.(string)
 				if !ok {
 					slog.Error("csrf cookie token exists but it has an invalid type", "token", tokenCookie)
-					// oldToken will be empty which is fine to continue on
+					// oldToken will still be empty which is fine to continue on
 				}
 			}
 
