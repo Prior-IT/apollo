@@ -8,3 +8,4 @@
 - [ ] I ran `go mod tidy` after changing dependencies
 - [ ] I changed the PR title to be more descriptive
 - [ ] I added the shortcut autolink in the PR title (e.g. `[sc-000]`)
+- [ ] I used `git rebase -i` to clean up the commit history in this branch
