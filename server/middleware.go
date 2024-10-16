@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
+	"log"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -31,8 +32,6 @@ func RequireLogin[state any](apollo *Apollo, _ state) (context.Context, error) {
 
 // CSRFTokenMiddleware injects a csrf token at the end of each request that can be checked on the next request
 // using apollo.CheckCSRF.
-//
-//nolint:cyclop
 func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handler {
 	if server.sessionStore == nil {
 		slog.Warn(
@@ -49,12 +48,9 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 			}
 			cookie, err := server.sessionStore.Get(r, cookieCSRF)
 			if err != nil {
-				cookie, err = server.sessionStore.New(r, cookieCSRF)
-				if err != nil {
-					slog.Error("Could not create new csrf cookie", "error", err)
-				}
-				configureCookie(server.cfg, cookie)
+				log.Panicf("Invalid name for a cookie: %v\n", cookieCSRF)
 			}
+			configureCookie(server.cfg, cookie)
 
 			var oldToken string
 			tokenCookie, ok := cookie.Values[sessionCSRFToken]
