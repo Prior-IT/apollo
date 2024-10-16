@@ -38,13 +38,17 @@ func (apollo *Apollo) Session() *sessions.Session {
 }
 
 func configureCookie(cfg *config.Config, session *sessions.Session) *sessions.Session {
-	if cfg.App.Debug {
-		session.Options.Secure = true
-		session.Options.HttpOnly = true
-		session.Options.SameSite = http.SameSiteStrictMode
-	} else {
+	if cfg.IsTest() {
 		session.Options.Secure = false
 		session.Options.HttpOnly = false
+		session.Options.SameSite = http.SameSiteNoneMode
+	} else if cfg.App.Debug {
+		session.Options.Secure = true
+		session.Options.HttpOnly = true
+		session.Options.SameSite = http.SameSiteNoneMode
+	} else { // production
+		session.Options.Secure = true
+		session.Options.HttpOnly = true
 		session.Options.SameSite = http.SameSiteLaxMode
 	}
 	return session
