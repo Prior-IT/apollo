@@ -31,7 +31,7 @@ func DB(t *testing.T) *postgres.DB {
 		t.Fatalf("Could not create database connection: %v", err)
 	}
 
-	err = db.Migrate(nil, "")
+	err = db.Migrate(nil, "", true)
 	if err != nil {
 		log.Panicf("Cannot migrate apollo db: %v", err)
 	}

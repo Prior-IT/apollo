@@ -82,6 +82,7 @@ func (db *DB) DeleteSchema(ctx context.Context, schema string) error {
 func (db *DB) createGooseProvider(
 	migrations *embed.FS,
 	folder string,
+	isDebug bool,
 ) (*goose.Provider, error) {
 	apollo, err := fs.Sub(embedMigrations, "migrations")
 	if err != nil {
@@ -109,14 +110,15 @@ func (db *DB) createGooseProvider(
 		database,
 		migrateFS,
 		goose.WithVerbose(true), // Enable logging (as with goose.Up)
+		goose.WithAllowOutofOrder(isDebug),
 	)
 }
 
 // Migrate the database using the specified embedded migration folder.
 // "folder" specifies the location of the folder containing sql files within the embed.FS
 // To only run the Apollo migrations, set migrations to nil
-func (db *DB) Migrate(migrations *embed.FS, folder string) error {
-	provider, err := db.createGooseProvider(migrations, folder)
+func (db *DB) Migrate(migrations *embed.FS, folder string, isDebug bool) error {
+	provider, err := db.createGooseProvider(migrations, folder, isDebug)
 	if err != nil {
 		return fmt.Errorf("Cannot create goose provider: %w", err)
 	}
@@ -136,8 +138,8 @@ func (db *DB) Migrate(migrations *embed.FS, folder string) error {
 // Migrate the database down a single step using the specified embedded migration folder.
 // "folder" specifies the location of the folder containing sql files within the embed.FS
 // To only run the Apollo migrations, set migrations to nil
-func (db *DB) MigrateDown(migrations *embed.FS, folder string) error {
-	provider, err := db.createGooseProvider(migrations, folder)
+func (db *DB) MigrateDown(migrations *embed.FS, folder string, isDebug bool) error {
+	provider, err := db.createGooseProvider(migrations, folder, isDebug)
 	if err != nil {
 		return fmt.Errorf("Cannot create goose provider: %w", err)
 	}
