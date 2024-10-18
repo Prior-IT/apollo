@@ -28,11 +28,11 @@ func (o *OrganisationService) CreateOrganisation(
 	name string,
 	parentID *core.OrganisationID,
 ) (*core.Organisation, error) {
-	return o.AddOrganisation(ctx, o.db, name, parentID)
+	return o.CreateOrganisationTx(ctx, o.db, name, parentID)
 }
 
 // Calls CreateOrganisation query using as a regular query or as a transaction
-func (o *OrganisationService) AddOrganisation(
+func (o *OrganisationService) CreateOrganisationTx(
 	ctx context.Context,
 	dbtx sqlc.DBTX,
 	name string,
@@ -49,6 +49,20 @@ func (o *OrganisationService) AddOrganisation(
 		return nil, ConvertPgError(err)
 	}
 	return convertOrganisation(organisation)
+}
+
+// Calls UpdateOrganisation query
+func (o *OrganisationService) UpdateOrganisation(
+	ctx context.Context,
+	organisationID core.OrganisationID,
+	name string,
+) error {
+	intID := int32(organisationID)
+	err := o.q.UpdateOrganisation(ctx, intID, name)
+	if err != nil {
+		return ConvertPgError(err)
+	}
+	return nil
 }
 
 // DeleteOrganisation implements core.OrganisationService.DeleteOrganisation

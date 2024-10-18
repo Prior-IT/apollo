@@ -25,6 +25,15 @@ INSERT INTO organisations (name, parent_id)
 RETURNING
     *;
 
+
+-- name: UpdateOrganisation :exec
+UPDATE
+    organisations
+SET
+    name = $2
+WHERE
+    id = $1;
+
 -- name: DeleteOrganisation :exec
 DELETE FROM organisations
 WHERE id = $1;
