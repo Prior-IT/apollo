@@ -223,16 +223,20 @@ func (q *Queries) RemoveUserFromOrganisation(ctx context.Context, userID int32, 
 	return err
 }
 
-const updateOrganisation = `-- name: UpdateOrganisation :exec
+const updateOrganisation = `-- name: UpdateOrganisation :one
 UPDATE
     organisations
 SET
     name = $2
 WHERE
     id = $1
+RETURNING
+	id, name, parent_id
 `
 
-func (q *Queries) UpdateOrganisation(ctx context.Context, iD int32, name string) error {
-	_, err := q.db.Exec(ctx, updateOrganisation, iD, name)
-	return err
+func (q *Queries) UpdateOrganisation(ctx context.Context, iD int32, name string) (Organisation, error) {
+	row := q.db.QueryRow(ctx, updateOrganisation, iD, name)
+	var i Organisation
+	err := row.Scan(&i.ID, &i.Name, &i.ParentID)
+	return i, err
 }

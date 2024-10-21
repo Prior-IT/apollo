@@ -64,7 +64,7 @@ func TestOrganisationService(t *testing.T) {
 		tests.Check(err)
 
 		organisation.Name = tests.Faker.BS()
-		err = service.UpdateOrganisation(ctx, organisation.ID, organisation.Name)
+		_, err = service.UpdateOrganisation(ctx, organisation.ID, organisation.Name)
 		tests.Check(err)
 
 		organisation2, err := service.GetOrganisation(ctx, organisation.ID)
