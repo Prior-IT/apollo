@@ -16,6 +16,20 @@ type Organisation struct {
 
 type OrganisationID = ID
 
+func ParseOrganisation(id int32, name string, parentID *int32) (*Organisation, error) {
+	organisationID := OrganisationID(id)
+	var pid *OrganisationID
+	if parentID != nil {
+		parentIDVal := OrganisationID(*parentID)
+		pid = &parentIDVal
+	}
+	return &Organisation{
+		ID:       organisationID,
+		Name:     name,
+		ParentID: pid,
+	}, nil
+}
+
 /**
  * APPLICATION
  */
