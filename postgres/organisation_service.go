@@ -56,13 +56,13 @@ func (o *OrganisationService) UpdateOrganisation(
 	ctx context.Context,
 	organisationID core.OrganisationID,
 	name string,
-) error {
+) (*core.Organisation, error) {
 	intID := int32(organisationID)
-	err := o.q.UpdateOrganisation(ctx, intID, name)
+	org, err := o.q.UpdateOrganisation(ctx, intID, name)
 	if err != nil {
-		return ConvertPgError(err)
+		return nil, ConvertPgError(err)
 	}
-	return nil
+	return core.ParseOrganisation(org.ID, org.Name, org.ParentID)
 }
 
 // DeleteOrganisation implements core.OrganisationService.DeleteOrganisation

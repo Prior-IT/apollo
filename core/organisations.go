@@ -39,6 +39,8 @@ type OrganisationService interface {
 	CreateOrganisation(ctx context.Context, name string, parentID *OrganisationID) (*Organisation, error)
 	// Retrieve the organisation with the specified id or ErrOrganisationDoesNotExist if no such organisation exists.
 	GetOrganisation(ctx context.Context, id OrganisationID) (*Organisation, error)
+	// Update an existing organisation and return the result.
+	UpdateOrganisation(ctx context.Context, id OrganisationID, name string) (*Organisation, error)
 	// Retrieve all existing organisations.
 	ListOrganisations(ctx context.Context) ([]Organisation, error)
 	// Retrieve the amount of existing organisations.

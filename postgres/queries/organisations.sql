@@ -26,13 +26,15 @@ RETURNING
     *;
 
 
--- name: UpdateOrganisation :exec
+-- name: UpdateOrganisation :one
 UPDATE
     organisations
 SET
     name = $2
 WHERE
-    id = $1;
+    id = $1
+RETURNING
+	*;
 
 -- name: DeleteOrganisation :exec
 DELETE FROM organisations
