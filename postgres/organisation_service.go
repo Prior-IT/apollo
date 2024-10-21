@@ -48,7 +48,7 @@ func (o *OrganisationService) CreateOrganisationTx(
 	if err != nil {
 		return nil, ConvertPgError(err)
 	}
-	return convertOrganisation(organisation)
+	return core.ParseOrganisation(organisation.ID, organisation.Name, organisation.ParentID)
 }
 
 // Calls UpdateOrganisation query
@@ -91,7 +91,7 @@ func (o *OrganisationService) GetOrganisation(
 	if err != nil {
 		return nil, ConvertPgError(err)
 	}
-	return convertOrganisation(organisation)
+	return core.ParseOrganisation(organisation.ID, organisation.Name, organisation.ParentID)
 }
 
 // ListOrganisations implements core.OrganisationService.ListOrganisations
@@ -168,24 +168,10 @@ func (o *OrganisationService) RemoveUser(
 	return o.q.RemoveUserFromOrganisation(ctx, int32(UserID), int32(OrgID))
 }
 
-func convertOrganisation(organisation sqlc.Organisation) (*core.Organisation, error) {
-	id := core.OrganisationID(organisation.ID)
-	var parentID *core.OrganisationID
-	if organisation.ParentID != nil {
-		parentIDVal := core.OrganisationID(*organisation.ParentID)
-		parentID = &parentIDVal
-	}
-	return &core.Organisation{
-		ID:       id,
-		Name:     organisation.Name,
-		ParentID: parentID,
-	}, nil
-}
-
 func convertOrganisationList(organisations []sqlc.Organisation) ([]core.Organisation, error) {
 	list := make([]core.Organisation, len(organisations))
 	for i, v := range organisations {
-		o, err := convertOrganisation(v)
+		o, err := core.ParseOrganisation(v.ID, v.Name, v.ParentID)
 		if err != nil {
 			return nil, err
 		}
