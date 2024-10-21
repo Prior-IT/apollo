@@ -162,7 +162,7 @@ func (server *Server[state]) handleMiddleware(
 
 func (server *Server[state]) AttachDefaultMiddleware() {
 	server.UseStd(
-		middleware.RedirectSlashes, // The FileServer warning should be irrelevant for our applications, but there might be edge cases where this does cause problems.
+		server.RedirectSlashes,
 		middleware.Recoverer,
 		middleware.RealIP,
 		middleware.RequestID,
