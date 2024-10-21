@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
+	"log"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -40,23 +41,27 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.HasPrefix(r.URL.Path, "/static/") || strings.HasPrefix(r.URL.Path, "/apollo/") {
+			if strings.HasPrefix(r.URL.Path, "/static/") ||
+				strings.HasPrefix(r.URL.Path, "/apollo/") {
 				next.ServeHTTP(w, r)
 				return
 			}
 			cookie, err := server.sessionStore.Get(r, cookieCSRF)
 			if err != nil {
-				cookie, err = server.sessionStore.New(r, cookieCSRF)
-				if err != nil {
-					slog.Error("Could not create new csrf cookie", "error", err)
-				}
-				configureCookie(server.cfg, cookie)
+				log.Panicf("Invalid name for a cookie: %v\n", cookieCSRF)
 			}
+			configureCookie(server.cfg, cookie)
 
-			oldToken, ok := cookie.Values[sessionCSRFToken].(string)
+			oldToken := ""
+			tokenCookie, ok := cookie.Values[sessionCSRFToken]
 			if !ok {
-				slog.Error("csrf cookie exists but does not contain a token")
-				// oldToken will be empty which is fine to continue on
+				slog.Debug("csrf cookie does not contain a token, all CSRF checks will fail")
+			} else {
+				oldToken, ok = tokenCookie.(string)
+				if !ok {
+					slog.Error("csrf cookie token exists but it has an invalid type", "token", tokenCookie)
+					// oldToken will still be empty which is fine to continue on
+				}
 			}
 
 			ctx := context.WithValue(r.Context(), ctxOldCSRFToken, oldToken)
