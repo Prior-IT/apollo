@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -30,6 +31,33 @@ func RequireLogin[state any](apollo *Apollo, _ state) (context.Context, error) {
 	return apollo.Context(), apollo.RequiresLogin()
 }
 
+func isStaticFile(path string) bool {
+	return strings.HasPrefix(path, "/static/") || strings.HasPrefix(path, "/apollo/")
+}
+
+// RedirectSlashes is middleware that redirects all requests that end in `/` to requests without trailing slash.
+// This differs from chi's own RedirectSlashes middleware in that it uses config.BaseURL() instead of the incoming
+// request's host header.
+func (server *Server[state]) RedirectSlashes(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		// NOTE: Ignore static files since this method does not work with FileServer,
+		// see https://github.com/go-chi/chi/issues/343
+		if !isStaticFile(path) && len(path) > 1 && path[len(path)-1] == '/' {
+			if r.URL.RawQuery != "" {
+				path = fmt.Sprintf("%s?%s", path[:len(path)-1], r.URL.RawQuery)
+			} else {
+				path = path[:len(path)-1]
+			}
+			redirectURL := server.cfg.BaseURL() + path
+			http.Redirect(w, r, redirectURL, http.StatusMovedPermanently)
+			return
+		}
+		next.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
 // CSRFTokenMiddleware injects a csrf token at the end of each request that can be checked on the next request
 // using apollo.CheckCSRF.
 func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handler {
@@ -41,8 +69,7 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.HasPrefix(r.URL.Path, "/static/") ||
-				strings.HasPrefix(r.URL.Path, "/apollo/") {
+			if isStaticFile(r.URL.Path) {
 				next.ServeHTTP(w, r)
 				return
 			}
