@@ -58,6 +58,21 @@ func TestOrganisationService(t *testing.T) {
 		assert.Equal(t, organisation, organisation2)
 	})
 
+	t.Run("ok: update organisation", func(t *testing.T) {
+		name := tests.Faker.BS()
+		organisation, err := service.CreateOrganisation(ctx, name, nil)
+		tests.Check(err)
+
+		organisation.Name = tests.Faker.BS()
+		err = service.UpdateOrganisation(ctx, organisation.ID, organisation.Name)
+		tests.Check(err)
+
+		organisation2, err := service.GetOrganisation(ctx, organisation.ID)
+		tests.Check(err)
+
+		assert.Equal(t, organisation, organisation2)
+	})
+
 	t.Run("ok: delete organisation", func(t *testing.T) {
 		name := tests.Faker.BS()
 		organisation, err := service.CreateOrganisation(ctx, name, nil)
