@@ -3,7 +3,9 @@ package server
 templ defaultLayout() {
 	<!DOCTYPE html>
 	<html lang="nl">
-		<head></head>
+		<head>
+			<base href={ Config(ctx).App.BasePath }/>
+		</head>
 		<body>
 			{ children... }
 		</body>
