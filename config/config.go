@@ -65,6 +65,7 @@ type AppConfig struct {
 	SSL                    bool   `default:"true"`
 	Port                   uint32 `default:"3000"`
 	ProxyPort              uint32
+	BasePath               string `default:""`
 	Host                   string
 	URL                    string
 	Name                   string
