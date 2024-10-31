@@ -10,8 +10,6 @@ import (
 	"github.com/prior-it/apollo/core"
 )
 
-type contextKey uint
-
 const (
 	cookieUser = "apollo-user"
 	cookieCSRF = "apollo-csrf"

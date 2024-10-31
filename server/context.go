@@ -8,6 +8,8 @@ import (
 	"github.com/prior-it/apollo/core"
 )
 
+type contextKey uint
+
 const (
 	ctxLoggedIn contextKey = iota
 	ctxUserID
@@ -37,6 +39,10 @@ func UserID(ctx context.Context) core.UserID {
 
 func UserName(ctx context.Context) string {
 	return ctx.Value(ctxUserName).(string)
+}
+
+func HasActiveOrganisation(ctx context.Context) bool {
+	return ctx.Value(ctxOrganisationID) != nil
 }
 
 func OrganisationID(ctx context.Context) core.OrganisationID {
