@@ -23,9 +23,5 @@ func ParseID(id string) (ID, error) {
 	if integerID < 0 {
 		return 0, errors.New("cannot parse  id:  ids cannot be negative")
 	}
-	ID := ID(int32(integerID))
-	if err != nil {
-		return 0, fmt.Errorf("cannot parse  id: %w", err)
-	}
-	return ID, nil
+	return ID(int32(integerID)), nil
 }
