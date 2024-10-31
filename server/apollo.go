@@ -267,6 +267,38 @@ func (apollo *Apollo) RequiresStrict(permission permissions.Permission) error {
 	return nil
 }
 
+// RequiresInOrganisation will return core.ErrForbidden if the current user does not have the specified permission, either globally, or within
+// the lineage of the specified organisation and nil otherwise.
+// If no user is logged in at all, this will return core.ErrUnauthenticated.
+func (apollo *Apollo) RequiresInOrganisation(
+	permission permissions.Permission,
+	organisation core.OrganisationID,
+) error {
+	if err := apollo.RequiresLogin(); err != nil {
+		return err
+	}
+	if !apollo.HasInOrganisation(permission, organisation) {
+		return core.ErrForbidden
+	}
+	return nil
+}
+
+// RequiresInOrganisationStrict will return core.ErrForbidden if the current user does not have the specified permission and nil otherwise.
+// If no user is logged in at all, this will return core.ErrUnauthenticated.
+// This will use the strict permission check, which ignores global permissions and only checks the specified organisation, not its lineage.
+func (apollo *Apollo) RequiresInOrganisationStrict(
+	permission permissions.Permission,
+	organisation core.OrganisationID,
+) error {
+	if err := apollo.RequiresLogin(); err != nil {
+		return err
+	}
+	if !apollo.HasInOrganisationStrict(permission, organisation) {
+		return core.ErrForbidden
+	}
+	return nil
+}
+
 // Has returns a boolean indicating whether or not the currently logged in user has the specified permission in any
 // of their permission groups or not. If no user is logged in, this will return false.
 // If there is an active organisation set, this will recursively check the permissions in that organisation's lineage.
@@ -292,31 +324,30 @@ func (apollo *Apollo) Has(permission permissions.Permission) bool {
 		return false
 	}
 	if !ok && apollo.Organisation != nil {
-		// User does not have the global permission -> check active organisation tree
-		ok, err = apollo.permissions.HasAnyForOrgTree(
-			apollo.Context(),
-			apollo.User.ID,
-			apollo.Organisation.ID,
-			permission,
-		)
-		if err != nil {
-			slog.Error(
-				"Error while checking organisation permissions",
-				"error",
-				err,
-				"organisation_id",
-				apollo.Organisation.ID,
-			)
-			return false
-		}
+		// User does not have the global permission -> check active organisation
+		return apollo.HasInOrganisation(permission, apollo.Organisation.ID)
 	}
 	return ok
 }
 
 // HasStrict returns a boolean indicating whether or not the currently logged in user has the specified permission in
 // the currently active organisation (and only there, global permissions and parent organisations are ignored).
-// If no user is logged in or they haven't chosen an active organisation yet, this will return false.
+// If no user is logged in or they haven't chosen an active organisation yet, this will always return false.
 func (apollo *Apollo) HasStrict(permission permissions.Permission) bool {
+	if apollo.Organisation == nil {
+		return false
+	}
+
+	return apollo.HasInOrganisationStrict(permission, apollo.Organisation.ID)
+}
+
+// HasInOrganisation returns a boolean indicating whether or not the currently logged in user has the specified permission within the
+// specified organisation or not. If no user is logged in, this will always return false.
+// This will recursively check the permissions in the specified organisation's lineage.
+func (apollo *Apollo) HasInOrganisation(
+	permission permissions.Permission,
+	organisation core.OrganisationID,
+) bool {
 	if apollo.permissions == nil {
 		slog.Warn(
 			"Trying to use permission system while Apollo does not have access to a permissions.Service!",
@@ -332,13 +363,47 @@ func (apollo *Apollo) HasStrict(permission permissions.Permission) bool {
 	if apollo.User.Admin {
 		return true
 	}
-	if apollo.Organisation == nil {
+	ok, err := apollo.permissions.HasAnyForOrgTree(
+		apollo.Context(),
+		apollo.User.ID,
+		organisation,
+		permission,
+	)
+	if err != nil {
+		slog.Error("Error while checking organisation permissions", "error", err,
+			"organisation_id",
+			organisation,
+		)
 		return false
+	}
+	return ok
+}
+
+// HasInOrganisationStrict returns a boolean indicating whether or not the currently logged in user has the specified permission within the
+// specified organisation (and only there, global permissions and parent organisations are ignored). If no user is logged in, this will always return false.
+func (apollo *Apollo) HasInOrganisationStrict(
+	permission permissions.Permission,
+	organisation core.OrganisationID,
+) bool {
+	if apollo.permissions == nil {
+		slog.Warn(
+			"Trying to use permission system while Apollo does not have access to a permissions.Service!",
+		)
+		return false
+	}
+	if apollo.User == nil {
+		slog.Warn(
+			"Trying to use permission system while no user is logged in!",
+		)
+		return false
+	}
+	if apollo.User.Admin {
+		return true
 	}
 	ok, err := apollo.permissions.HasAnyForOrg(
 		apollo.Context(),
 		apollo.User.ID,
-		apollo.Organisation.ID,
+		organisation,
 		permission,
 	)
 	if err != nil {
@@ -347,7 +412,7 @@ func (apollo *Apollo) HasStrict(permission permissions.Permission) bool {
 			"error",
 			err,
 			"organisation_id",
-			apollo.Organisation.ID,
+			organisation,
 		)
 		return false
 	}
