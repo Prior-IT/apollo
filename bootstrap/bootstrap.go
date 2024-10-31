@@ -69,7 +69,7 @@ func Full[state BootstrappedState[state]](
 	stt state,
 	cfg *config.Config,
 	staticFS embed.FS,
-	middlewares ...func(http.Handler) http.Handler,
+	middlewares ...server.Middleware[state],
 ) *server.Server[state] {
 	if cfg == nil {
 		panic("You need to supply a config.Config value to bootstrap a new server")
@@ -111,7 +111,7 @@ func Full[state BootstrappedState[state]](
 		s.UseStd(middleware.NoCache)
 	}
 
-	s.UseStd(middlewares...)
+	s.Use(middlewares...)
 
 	s.StaticFiles("/static", "static", staticFS)
 	s.StaticFiles(

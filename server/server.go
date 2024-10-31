@@ -144,15 +144,26 @@ func (server *Server[state]) handle(handler Handler[state]) http.HandlerFunc {
 	}
 }
 
-func (server *Server[state]) handleMiddleware(
+// ConvertToApolloMiddleware will convert stdlib middleware to Apollo middleware
+func ConvertToApolloMiddleware[state State](
+	middleware func(w http.ResponseWriter, r *http.Request),
+) Middleware[state] {
+	return func(apollo *Apollo, s state) (context.Context, error) {
+		middleware(apollo.Writer, apollo.Request)
+		return apollo.Context(), nil
+	}
+}
+
+// Utility function that converts Apollo middleware to a http handler
+func (server *Server[state]) HandlerMiddleware(
 	middleware Middleware[state],
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			appolo := server.NewApollo(w, r)
-			ctx, err := middleware(appolo, server.state)
+			apollo := server.NewApollo(w, r)
+			ctx, err := middleware(apollo, server.state)
 			if err != nil {
-				server.errorHandler(appolo, err)
+				server.errorHandler(apollo, err)
 			} else {
 				next.ServeHTTP(w, r.WithContext(ctx))
 			}
@@ -172,7 +183,6 @@ func (server *Server[state]) AttachDefaultMiddleware() {
 		middleware.Timeout(
 			time.Duration(server.cfg.App.RequestTimeout)*time.Second,
 		),
-		// @TODO: Cookie store
 		server.SessionMiddleware(),
 		server.CSRFTokenMiddleware(),
 		// @TODO: Page caching
@@ -251,7 +261,7 @@ func (server *Server[state]) Use(
 	middlewares ...Middleware[state],
 ) *Server[state] {
 	for _, mi := range middlewares {
-		server.mux.Use(server.handleMiddleware(mi))
+		server.mux.Use(server.HandlerMiddleware(mi))
 	}
 	return server
 }
