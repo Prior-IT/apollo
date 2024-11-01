@@ -172,6 +172,21 @@ func (server *Server[state]) SessionMiddleware() func(http.Handler) http.Handler
 				ctx = context.WithValue(ctx, ctxUserID, userID)
 			}
 
+			organisationID, ok := session.Values[sessionOrganisationID].(core.OrganisationID)
+			if ok {
+				ctx = context.WithValue(ctx, ctxOrganisationID, organisationID)
+			}
+
+			organisationName, ok := session.Values[sessionOrganisationName].(string)
+			if ok {
+				ctx = context.WithValue(ctx, ctxOrganisationName, organisationName)
+			}
+
+			organisationParent, ok := session.Values[sessionOrganisationParent].(core.OrganisationID)
+			if ok {
+				ctx = context.WithValue(ctx, ctxOrganisationParent, organisationParent)
+			}
+
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

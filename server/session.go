@@ -17,14 +17,15 @@ const (
 
 const (
 	// User cookie
-	sessionLoggedIn         = "apollo-logged-in"
-	sessionIsAdmin          = "apollo-user-admin"
-	sessionUserName         = "apollo-user-name"
-	sessionEmail            = "apollo-user-email"
-	sessionJoined           = "apollo-user-joined"
-	sessionUserID           = "apollo-user-id"
-	sessionOrganisationID   = "apollo-organisation-id"
-	sessionOrganisationName = "apollo-organisation-name"
+	sessionLoggedIn           = "apollo-logged-in"
+	sessionIsAdmin            = "apollo-user-admin"
+	sessionUserName           = "apollo-user-name"
+	sessionEmail              = "apollo-user-email"
+	sessionJoined             = "apollo-user-joined"
+	sessionUserID             = "apollo-user-id"
+	sessionOrganisationID     = "apollo-organisation-id"
+	sessionOrganisationName   = "apollo-organisation-name"
+	sessionOrganisationParent = "apollo-organisation-parent"
 
 	// CSRF cookie
 	sessionCSRFToken = "token"
@@ -81,9 +82,15 @@ func (apollo *Apollo) SetActiveOrganisation(organisation *core.Organisation) err
 	if organisation != nil {
 		session.Values[sessionOrganisationID] = organisation.ID
 		session.Values[sessionOrganisationName] = organisation.Name
+		if organisation.ParentID != nil {
+			session.Values[sessionOrganisationParent] = *organisation.ParentID
+		} else {
+			session.Values[sessionOrganisationParent] = nil
+		}
 	} else {
 		session.Values[sessionOrganisationID] = nil
 		session.Values[sessionOrganisationName] = nil
+		session.Values[sessionOrganisationParent] = nil
 	}
 	apollo.Organisation = organisation
 	return apollo.store.Save(apollo.Request, apollo.Writer, session)
@@ -190,9 +197,22 @@ func (apollo *Apollo) retrieveOrganisation() (*core.Organisation, error) {
 		)
 	}
 
+	var parentID *core.OrganisationID
+	if session.Values[sessionOrganisationParent] != nil {
+		pID, ok := session.Values[sessionOrganisationParent].(core.OrganisationID)
+		if !ok {
+			return nil, fmt.Errorf(
+				"invalid organisation parent id stored in session: %v",
+				session.Values[sessionOrganisationParent],
+			)
+		}
+		parentID = &pID
+	}
+
 	return &core.Organisation{
-		ID:   id,
-		Name: name,
+		ID:       id,
+		Name:     name,
+		ParentID: parentID,
 	}, nil
 }
 
@@ -205,6 +225,7 @@ func (apollo *Apollo) Logout() error {
 	session.Values[sessionUserID] = 0
 	session.Values[sessionOrganisationName] = ""
 	session.Values[sessionOrganisationID] = 0
+	session.Values[sessionOrganisationParent] = 0
 	session.Values[sessionEmail] = ""
 	return session.Store().Save(apollo.Request, apollo.Writer, session)
 }
