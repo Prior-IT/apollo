@@ -16,6 +16,7 @@ const (
 	ctxUserName
 	ctxOrganisationID
 	ctxOrganisationName
+	ctxOrganisationParent
 	ctxSession
 	ctxConfig
 	ctxIsAdmin
@@ -51,6 +52,14 @@ func OrganisationID(ctx context.Context) core.OrganisationID {
 
 func OrganisationName(ctx context.Context) string {
 	return ctx.Value(ctxOrganisationName).(string)
+}
+
+func OrganisationParentID(ctx context.Context) *core.OrganisationID {
+	id, ok := ctx.Value(ctxOrganisationParent).(core.OrganisationID)
+	if !ok {
+		return nil
+	}
+	return &id
 }
 
 // Session provides access to the current user's session.
