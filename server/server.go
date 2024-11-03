@@ -148,7 +148,7 @@ func (server *Server[state]) handle(handler Handler[state]) http.HandlerFunc {
 func ConvertToApolloMiddleware[state State](
 	middleware func(w http.ResponseWriter, r *http.Request),
 ) Middleware[state] {
-	return func(apollo *Apollo, s state) (context.Context, error) {
+	return func(apollo *Apollo, _ state) (context.Context, error) {
 		middleware(apollo.Writer, apollo.Request)
 		return apollo.Context(), nil
 	}
@@ -366,6 +366,17 @@ func (server *Server[state]) Page(
 ) *Server[state] {
 	server.mux.Get(pattern, server.handle(func(apollo *Apollo, _ state) error {
 		return apollo.RenderPage(component, options)
+	}))
+	return server
+}
+
+// Component adds the route `pattern` that matches a GET http method to render the specified templ component without any layout.
+func (server *Server[state]) Component(
+	pattern string,
+	component templ.Component,
+) *Server[state] {
+	server.mux.Get(pattern, server.handle(func(apollo *Apollo, _ state) error {
+		return apollo.RenderComponent(component)
 	}))
 	return server
 }
