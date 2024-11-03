@@ -31,7 +31,7 @@ func RequireLogin[state any](apollo *Apollo, _ state) (context.Context, error) {
 	return apollo.Context(), apollo.RequiresLogin()
 }
 
-func isStaticFile(path string) bool {
+func IsStaticFile(path string) bool {
 	return strings.HasPrefix(path, "/static/") || strings.HasPrefix(path, "/apollo/")
 }
 
@@ -43,7 +43,7 @@ func (server *Server[state]) RedirectSlashes(next http.Handler) http.Handler {
 		path := r.URL.Path
 		// NOTE: Ignore static files since this method does not work with FileServer,
 		// see https://github.com/go-chi/chi/issues/343
-		if !isStaticFile(path) && len(path) > 1 && path[len(path)-1] == '/' {
+		if !IsStaticFile(path) && len(path) > 1 && path[len(path)-1] == '/' {
 			if r.URL.RawQuery != "" {
 				path = fmt.Sprintf("%s?%s", path[:len(path)-1], r.URL.RawQuery)
 			} else {
@@ -69,7 +69,7 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if isStaticFile(r.URL.Path) {
+			if IsStaticFile(r.URL.Path) {
 				next.ServeHTTP(w, r)
 				return
 			}
