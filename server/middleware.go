@@ -81,12 +81,14 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 
 			oldToken := ""
 			tokenCookie, ok := cookie.Values[sessionCSRFToken]
-			if !ok {
-				slog.Debug("csrf cookie does not contain a token, all CSRF checks will fail")
-			} else {
+			if ok {
 				oldToken, ok = tokenCookie.(string)
 				if !ok {
-					slog.Error("csrf cookie token exists but it has an invalid type", "token", tokenCookie)
+					slog.Error(
+						"csrf cookie token exists but it has an invalid type",
+						"token",
+						tokenCookie,
+					)
 					// oldToken will still be empty which is fine to continue on
 				}
 			}
@@ -111,9 +113,12 @@ func (server *Server[state]) CSRFTokenMiddleware() func(http.Handler) http.Handl
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 
-			err = csrfInput(true).Render(ctx, w)
-			if err != nil {
-				slog.Error("cannot render csrf input", "error", err)
+			// If this was a HTMX request, send an OOB-update for the CSRF token
+			if r.Header.Get("HX-Request") == "true" {
+				err = csrfInput(true).Render(ctx, w)
+				if err != nil {
+					slog.Error("cannot render csrf input", "error", err)
+				}
 			}
 		})
 	}
@@ -133,6 +138,8 @@ func (server *Server[state]) ContextMiddleware(next http.Handler) http.Handler {
 
 // SessionMiddleware returns the Apollo session middleware.
 // Attach this before adding routes, if you want to use sessions.
+//
+//nolint:cyclop
 func (server *Server[state]) SessionMiddleware() func(http.Handler) http.Handler {
 	if server.sessionStore == nil {
 		slog.Warn("Not enabling the SessionMiddleware since there is no SessionStore configured")
