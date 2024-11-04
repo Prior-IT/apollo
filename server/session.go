@@ -271,11 +271,11 @@ func (apollo *Apollo) Logout() error {
 	session := apollo.Session()
 	session.Values[sessionLoggedIn] = false
 	session.Values[sessionIsAdmin] = false
-	session.Values[sessionUserName] = ""
-	session.Values[sessionUserID] = 0
-	session.Values[sessionOrganisationName] = ""
-	session.Values[sessionOrganisationID] = 0
-	session.Values[sessionOrganisationParent] = 0
-	session.Values[sessionEmail] = ""
+	session.Values[sessionUserName] = nil
+	session.Values[sessionUserID] = nil
+	session.Values[sessionOrganisationName] = nil
+	session.Values[sessionOrganisationID] = nil
+	session.Values[sessionOrganisationParent] = nil
+	session.Values[sessionEmail] = nil
 	return session.Store().Save(apollo.Request, apollo.Writer, session)
 }
