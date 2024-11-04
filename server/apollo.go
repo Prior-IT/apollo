@@ -10,7 +10,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/go-chi/httplog/v2"
-	"github.com/go-chi/render"
+	"github.com/gorilla/schema"
 	"github.com/gorilla/sessions"
 	"github.com/prior-it/apollo/config"
 	"github.com/prior-it/apollo/core"
@@ -35,6 +35,7 @@ type Apollo struct {
 	permissions  permissions.Service
 	store        sessions.Store
 	ctx          context.Context
+	decoder      *schema.Decoder
 }
 
 // Populate populates the Apollo object with fields that need to be retrieved after initialisation.
@@ -183,6 +184,7 @@ func (apollo *Apollo) GetPath(key string) string {
 // ParseBody parses the request body into an interface using the form decoder.
 // @TODO: Allow other decoders as well, it should be possible to get the correct
 // decoder from the request headers.
+// @TODO: This decoder has an "IgnoreUnknownKeys" option, do we want to expose that as well?
 //
 // # Example:
 //
@@ -191,7 +193,10 @@ func (apollo *Apollo) GetPath(key string) string {
 //		return fmt.Errorf("cannot parse body: %w", err)
 //	}
 func (apollo *Apollo) ParseBody(v interface{}) error {
-	return render.DecodeForm(apollo.Request.Body, v)
+	if apollo.decoder == nil {
+		apollo.decoder = schema.NewDecoder()
+	}
+	return apollo.decoder.Decode(v, apollo.Request.PostForm)
 }
 
 // FormValue returns the first value for the named component of the POST, PUT, or PATCH request body.
