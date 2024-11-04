@@ -432,7 +432,8 @@ func (apollo *Apollo) HasInOrganisationStrict(
 // CheckCSRF will check if a CSRF token was added to the requests form body and if that token matches the
 // token specified in the CSRF cookie. If either of these are false, this will return an error. If the correct CSRF
 // token was specified, this will return nil.
-// Note that currently only POST requests using form values are supported.
+// Note that you can only check the CSRF token once, the token will be discarded if the check passes.
+// Also note that currently only POST requests using form values are supported.
 // GET requests cannot use CSRF since that's less safe.
 // JSON API requests can also not use CSRF at this moment, but that might change in the future using a CSRF header, if
 // that need would ever arise.
@@ -449,6 +450,9 @@ func (apollo *Apollo) CheckCSRF() error {
 	if token != sessionToken {
 		return ErrCSRFFail
 	}
+
+	// Remove the csrf token field from the form data
+	apollo.Request.PostForm.Del(CsrfName)
 
 	return nil
 }
