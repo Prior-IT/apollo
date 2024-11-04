@@ -1,7 +1,9 @@
 package server
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -53,6 +55,41 @@ func configureCookie(cfg *config.Config, session *sessions.Session) *sessions.Se
 	return session
 }
 
+func buildSessionContext(ctx context.Context, session *sessions.Session) context.Context {
+	loggedIn, ok := session.Values[sessionLoggedIn].(bool)
+	ctx = context.WithValue(ctx, ctxLoggedIn, ok && loggedIn)
+
+	isAdmin, ok := session.Values[sessionIsAdmin].(bool)
+	ctx = context.WithValue(ctx, ctxIsAdmin, ok && isAdmin)
+
+	userName, ok := session.Values[sessionUserName].(string)
+	if ok {
+		ctx = context.WithValue(ctx, ctxUserName, userName)
+	}
+
+	userID, ok := session.Values[sessionUserID].(core.UserID)
+	if ok {
+		ctx = context.WithValue(ctx, ctxUserID, userID)
+	}
+
+	organisationID, ok := session.Values[sessionOrganisationID].(core.OrganisationID)
+	if ok {
+		ctx = context.WithValue(ctx, ctxOrganisationID, organisationID)
+	}
+
+	organisationName, ok := session.Values[sessionOrganisationName].(string)
+	if ok {
+		ctx = context.WithValue(ctx, ctxOrganisationName, organisationName)
+	}
+
+	organisationParent, ok := session.Values[sessionOrganisationParent].(core.OrganisationID)
+	if ok {
+		ctx = context.WithValue(ctx, ctxOrganisationParent, organisationParent)
+	}
+
+	return ctx
+}
+
 // Login will log in with the specified user.
 func (apollo *Apollo) Login(user *core.User) error {
 	if user == nil {
@@ -69,11 +106,18 @@ func (apollo *Apollo) Login(user *core.User) error {
 	session.Values[sessionUserID] = user.ID
 	session.Values[sessionJoined] = user.Joined
 	apollo.User = user
-	return apollo.store.Save(apollo.Request, apollo.Writer, session)
+	err := apollo.store.Save(apollo.Request, apollo.Writer, session)
+	if err != nil {
+		return err
+	}
+	apollo.LogField("active_user_id", slog.AnyValue(apollo.User.ID))
+	apollo.rebuildContext()
+	return nil
 }
 
 // SetActiveOrganisation changes the "active organisation". This might influence some other organisation-dependent requests
 // such as permission checks.
+// Beware: this might update apollo.Context(), reretrieve that if you were already using it.
 func (apollo *Apollo) SetActiveOrganisation(organisation *core.Organisation) error {
 	if apollo.store == nil {
 		panic("you need to specify a session store before setting an active organisation")
@@ -93,7 +137,13 @@ func (apollo *Apollo) SetActiveOrganisation(organisation *core.Organisation) err
 		session.Values[sessionOrganisationParent] = nil
 	}
 	apollo.Organisation = organisation
-	return apollo.store.Save(apollo.Request, apollo.Writer, session)
+	err := apollo.store.Save(apollo.Request, apollo.Writer, session)
+	if err != nil {
+		return err
+	}
+	apollo.LogField("active_organisation_id", slog.AnyValue(apollo.Organisation.ID))
+	apollo.rebuildContext()
+	return nil
 }
 
 // Utility function that retrieves a full core.User object from the current session, if one exists.
