@@ -138,8 +138,6 @@ func (server *Server[state]) ContextMiddleware(next http.Handler) http.Handler {
 
 // SessionMiddleware returns the Apollo session middleware.
 // Attach this before adding routes, if you want to use sessions.
-//
-//nolint:cyclop
 func (server *Server[state]) SessionMiddleware() func(http.Handler) http.Handler {
 	if server.sessionStore == nil {
 		slog.Warn("Not enabling the SessionMiddleware since there is no SessionStore configured")
@@ -162,37 +160,7 @@ func (server *Server[state]) SessionMiddleware() func(http.Handler) http.Handler
 			}
 
 			ctx = context.WithValue(ctx, ctxSession, session)
-
-			loggedIn, ok := session.Values[sessionLoggedIn].(bool)
-			ctx = context.WithValue(ctx, ctxLoggedIn, ok && loggedIn)
-
-			isAdmin, ok := session.Values[sessionIsAdmin].(bool)
-			ctx = context.WithValue(ctx, ctxIsAdmin, ok && isAdmin)
-
-			userName, ok := session.Values[sessionUserName].(string)
-			if ok {
-				ctx = context.WithValue(ctx, ctxUserName, userName)
-			}
-
-			userID, ok := session.Values[sessionUserID].(core.UserID)
-			if ok {
-				ctx = context.WithValue(ctx, ctxUserID, userID)
-			}
-
-			organisationID, ok := session.Values[sessionOrganisationID].(core.OrganisationID)
-			if ok {
-				ctx = context.WithValue(ctx, ctxOrganisationID, organisationID)
-			}
-
-			organisationName, ok := session.Values[sessionOrganisationName].(string)
-			if ok {
-				ctx = context.WithValue(ctx, ctxOrganisationName, organisationName)
-			}
-
-			organisationParent, ok := session.Values[sessionOrganisationParent].(core.OrganisationID)
-			if ok {
-				ctx = context.WithValue(ctx, ctxOrganisationParent, organisationParent)
-			}
+			ctx = buildSessionContext(ctx, session)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

@@ -34,11 +34,13 @@ type Apollo struct {
 	Organisation *core.Organisation
 	permissions  permissions.Service
 	store        sessions.Store
+	ctx          context.Context
 }
 
 // Populate populates the Apollo object with fields that need to be retrieved after initialisation.
 // E.g. fields that are stored in the active session.
 func (apollo *Apollo) populate() {
+	apollo.ctx = apollo.Request.Context()
 	if apollo.store != nil {
 		apollo.populateUser()
 		apollo.populateOrganisation()
@@ -139,7 +141,15 @@ func (apollo *Apollo) LogField(field string, value slog.Value) {
 // client's connection closes, the request is canceled (with HTTP/2),
 // or when the ServeHTTP method returns.
 func (apollo *Apollo) Context() context.Context {
-	return apollo.Request.Context()
+	return apollo.ctx
+}
+
+// RebuildContext rebuilds the apollo context based on the current session data.
+func (apollo *Apollo) rebuildContext() {
+	ctx := apollo.ctx
+	session := apollo.Session()
+	ctx = buildSessionContext(ctx, session)
+	apollo.ctx = ctx
 }
 
 // Host specifies the host on which the URL is sought.
