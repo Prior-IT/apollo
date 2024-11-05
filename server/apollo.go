@@ -196,6 +196,10 @@ func (apollo *Apollo) ParseBody(v interface{}) error {
 	if apollo.decoder == nil {
 		apollo.decoder = schema.NewDecoder()
 	}
+	err := apollo.Request.ParseForm()
+	if err != nil {
+		return fmt.Errorf("cannot parse form: %w", err)
+	}
 	return apollo.decoder.Decode(v, apollo.Request.PostForm)
 }
 
