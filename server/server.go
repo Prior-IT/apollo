@@ -29,7 +29,7 @@ type (
 )
 
 type State interface {
-	Close()
+	Close(ctx context.Context)
 }
 
 type Server[state State] struct {
@@ -194,11 +194,12 @@ func (server *Server[state]) AttachDefaultMiddleware() {
 // If no listener is provided, a new TCP listener will be created on the configured host and port.
 func (server *Server[state]) Start(ctx context.Context, listener *net.Listener) error {
 	// Handle OS signals to cancel the context
-	ctxServer, cancelServer := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
-	defer cancelServer()
+	ctxServer, stopSignal := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stopSignal()
 
+	errorCh := make(chan error)
 	// Run the actual server
-	errServer := func() error {
+	go func() {
 		host := fmt.Sprintf("%v:%v", server.cfg.App.Host, server.cfg.App.Port)
 		if listener != nil {
 			host = (*listener).Addr().String()
@@ -212,14 +213,30 @@ func (server *Server[state]) Start(ctx context.Context, listener *net.Listener) 
 		}
 
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			return err
+			errorCh <- err
 		}
-		return nil
+		close(errorCh)
 	}()
 
-	<-ctxServer.Done()
+	var errServer error
 
-	ctxShutdown, cancelShutdown := context.WithTimeout(ctx, 5*time.Second) //nolint:mnd
+loop:
+	for {
+		select {
+		case err := <-errorCh:
+			errServer = err
+			break loop
+
+		case <-ctxServer.Done():
+			slog.Info("Server interrupt received")
+			break loop
+		}
+	}
+
+	ctxShutdown, cancelShutdown := context.WithTimeout(
+		ctx,
+		time.Duration(server.cfg.App.ShutdownTimeout)*time.Second,
+	)
 	defer cancelShutdown()
 
 	go server.Shutdown(ctxShutdown)
@@ -230,9 +247,10 @@ func (server *Server[state]) Start(ctx context.Context, listener *net.Listener) 
 }
 
 // Shutdown will gracefully release all server resources. You generally don't need to call this manually.
-func (server *Server[state]) Shutdown(_ context.Context) {
-	sentry.Flush(4 * time.Second) //nolint:mnd
-	server.state.Close()
+func (server *Server[state]) Shutdown(ctx context.Context) {
+	sentryTimeout := max(0, time.Duration(server.cfg.App.ShutdownTimeout-1))
+	sentry.Flush(sentryTimeout * time.Second)
+	server.state.Close(ctx)
 }
 
 // ServeHTTP implements [net/http.Handler].

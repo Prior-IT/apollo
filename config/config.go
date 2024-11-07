@@ -1,11 +1,10 @@
 package config
 
 import (
-	"bytes"
-	"embed"
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"strings"
@@ -58,6 +57,7 @@ type Config struct {
 	Database       DatabaseConfig
 	Log            LogConfig
 	OAuthProviders map[string]OauthProviderConfig `mapstructure:"OAUTH"`
+	Tools          ToolsConfig
 }
 
 type AppConfig struct {
@@ -69,12 +69,13 @@ type AppConfig struct {
 	Host                   string
 	URL                    string
 	Name                   string
-	Env                    AppEnv `default:"prod"`
+	ShutdownTimeout        float32 `default:"1.5"` // in seconds
+	Env                    AppEnv  `default:"production"`
 	Version                string
 	RequestTimeout         uint32 `default:"30"` // in seconds
-	AuthenticationKey      string `mapstructure:"AUTHKEY"`
-	EncryptionKey          string `mapstructure:"ENCKEY"`
-	DefaultPermissionGroup int    `mapstructure:"DEFAULTPERMGROUP"`
+	AuthenticationKey      string `                     mapstructure:"AUTHKEY"`
+	EncryptionKey          string `                     mapstructure:"ENCKEY"`
+	DefaultPermissionGroup int    `                     mapstructure:"DEFAULTPERMGROUP"`
 }
 
 type SentryConfig struct {
@@ -107,6 +108,25 @@ type OauthProviderConfig struct {
 	UserURL       string
 }
 
+type ToolsConfig struct {
+	// Templ version information
+	Templ string
+	// SQLC version information
+	SQLC string
+	// Tailwind version information
+	Tailwind string
+	// Tailwind input css file
+	TailwindInput string
+	// Tailwind output css file
+	TailwindOutput string
+	// Debounce timer between subsequent runs of the same command, in milliseconds
+	Debounce    int32 `default:"200"`
+	MainCmd     string
+	BuildDir    string `default:"./tmp"`
+	IgnoreDirs  []string
+	OpenBrowser bool
+}
+
 func (c Config) BaseURL() string {
 	url := c.App.URL
 	// If no url was specified, build one from the host and port values
@@ -133,16 +153,19 @@ func (c *Config) IsTest() bool {
 		strings.Contains(os.Args[0], "/_test/")
 }
 
-func Load(configFS embed.FS, dotenvFiles ...string) (*Config, error) {
-	configFile, err := configFS.ReadFile("config.toml")
+// Load the configuration file from the specified filesystem.
+// You can specify additional .env files to load, by default this only checks for ".env" in the
+// current working directory.
+func Load(configFS fs.FS, dotenvFiles ...string) (*Config, error) {
+	file, err := configFS.Open("config.toml")
 	if err != nil {
-		return nil, fmt.Errorf("could not read config.toml from your configFS: %w", err)
+		return nil, fmt.Errorf("could not find config.toml in the configFS: %w", err)
 	}
 
 	reader := viper.NewWithOptions(viper.KeyDelimiter("_"))
 	reader.SetConfigType("toml")
 
-	if err = reader.ReadConfig(bytes.NewBuffer(configFile)); err != nil {
+	if err = reader.ReadConfig(file); err != nil {
 		return nil, fmt.Errorf("could not load the app configuration: %w", err)
 	}
 
