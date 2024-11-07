@@ -21,14 +21,13 @@ If you want to hot reload tests (e.g. while writing or tweaking them), you can u
 You can also run `just devtest ./server/...` or `just test ./server/...` to only run tests for those directories.
 Or run `just test -run Users ./...` (and the same for devtest) to only run tests that contain "Users" in their name.
 
+## Apollo Runner
+Applications built with Apollo can use the `./cmd/runner` command to run their application with full live-reloading.
+Check out `config/config.go` for the configuration settings that enable this runner.
+
 ## TODO
-- [x] Core
-- [x] Postgres core
-- [x] OAuth login
-- [x] Organisations
-- [x] Permissions
-- [ ] EntraID login
 - [ ] Magic e-mail login
+- [ ] Username + password login
 - [ ] Move account cache to a separate service (so you can use redis for caching while still storing accounts in postgres)
 - [ ] Alert component
 - [ ] E-mail verification
