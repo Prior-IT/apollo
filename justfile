@@ -1,11 +1,11 @@
 set positional-arguments
 
 # Dependencies
-templ := "github.com/a-h/templ/cmd/templ@v0.2.778"
-air := "github.com/air-verse/air@v1.60.0"
+templ := "github.com/a-h/templ/cmd/templ@v0.2.793"
+air := "github.com/air-verse/air@v1.61.1"
 sqlc := "github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0"
 goose := "github.com/pressly/goose/v3/cmd/goose@v3.22.1"
-tailwind := "tailwindcss@3.4.13"
+tailwind := "tailwindcss@3.4.14"
 
 default:
   @just --list --justfile {{justfile()}}
@@ -72,9 +72,19 @@ newmigration name:
 
 # Download and install all required cli tools and project dependencies
 setup:
+  go install {{templ}} # Make sure global templ version is the same
+  npx {{tailwind}} -i input.css -o static/styles.css # Prompt users to update tailwindcss
   go mod tidy
   go mod download
   go mod verify
+  go run {{templ}} generate
+
+# Update dependencies specified in justfile to the same version in the project
+# You only need to run this after changing the versions in justfile
+update:
+  go get {{templ}}
+  go get {{sqlc}}
+  go get {{goose}}
 
 # Examine code for known issues
 vet:
