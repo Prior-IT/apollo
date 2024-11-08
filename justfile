@@ -73,7 +73,7 @@ newmigration name:
 # Download and install all required cli tools and project dependencies
 setup:
   go install {{templ}} # Make sure global templ version is the same
-  npx {{tailwind}} -i input.css -o static/styles.css # Prompt users to update tailwindcss
+  npx {{tailwind}} -i components/input.css -o components/static/apollo.css -m # Prompt users to update tailwindcss
   go mod tidy
   go mod download
   go mod verify
