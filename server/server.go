@@ -237,9 +237,12 @@ loop:
 		ctx,
 		time.Duration(server.cfg.App.ShutdownTimeout)*time.Second,
 	)
-	defer cancelShutdown()
 
-	go server.Shutdown(ctxShutdown)
+	go func() {
+		defer cancelShutdown()
+
+		server.Shutdown(ctxShutdown)
+	}()
 
 	<-ctxShutdown.Done()
 

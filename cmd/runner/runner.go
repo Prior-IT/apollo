@@ -226,7 +226,7 @@ func createCommands(
 		ctx,
 		"application",
 		lipgloss.NewStyle(),
-		false,
+		true,
 		false, // don't run at start, wait for the first compile to finish
 		"%v/main",
 		cfg.Tools.BuildDir,
@@ -313,7 +313,7 @@ func startRunner(
 		<-sigs
 
 		if debug {
-			outChan <- "Received shutdown signal\n"
+			outChan <- "Received shutdown signal"
 		}
 
 		// Give the subprocesses some time to exit gracefully
