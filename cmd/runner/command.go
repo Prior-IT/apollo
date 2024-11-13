@@ -18,15 +18,16 @@ import (
 )
 
 type command struct {
-	Cmd                *exec.Cmd
-	Out, Err           chan string
-	prOut, prErr       chan string
-	Name               string
-	Style              lipgloss.Style
-	HasError           bool
-	SpawnsSubprocesses bool
-	RunAtStart         bool
-	FullCommand        string
+	Cmd             *exec.Cmd
+	Out, Err        chan string
+	prOut, prErr    chan string
+	Name            string
+	Style           lipgloss.Style
+	HasError        bool
+	RequiresSigKill bool
+	RunAtStart      bool
+	FullCommand     string
+	restartMutex    sync.Mutex
 }
 
 // Create a new command but do not run it yet.
@@ -35,7 +36,7 @@ func newCommand(
 	ctx context.Context,
 	name string,
 	style lipgloss.Style,
-	spawnsSubprocesses bool,
+	requiresSigKill bool,
 	runAtStart bool,
 	cmd string,
 	args ...any,
@@ -43,13 +44,13 @@ func newCommand(
 	var c *exec.Cmd
 	fullCommand := fmt.Sprintf(cmd, args...)
 	// Watchers need to run without context so we will always kill their entire process group
-	if spawnsSubprocesses {
+	if requiresSigKill {
 		c = exec.Command("/bin/sh", "-c", fullCommand)
 	} else {
 		c = exec.CommandContext(ctx, "/bin/sh", "-c", fullCommand)
 	}
 
-	// Because using pty cannot have same pgid
+	// Child processes should get their own pgid
 	c.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
 	}
@@ -79,16 +80,16 @@ func newCommand(
 	go redirectStreams(name, prOutCh, prErrCh, outCh, errCh)
 
 	return &command{
-		Cmd:                c,
-		Name:               name,
-		FullCommand:        fullCommand,
-		Style:              style,
-		SpawnsSubprocesses: spawnsSubprocesses,
-		RunAtStart:         runAtStart,
-		Out:                outCh,
-		Err:                errCh,
-		prOut:              prOutCh,
-		prErr:              prErrCh,
+		Cmd:             c,
+		Name:            name,
+		FullCommand:     fullCommand,
+		Style:           style,
+		RequiresSigKill: requiresSigKill,
+		RunAtStart:      runAtStart,
+		Out:             outCh,
+		Err:             errCh,
+		prOut:           prOutCh,
+		prErr:           prErrCh,
 	}, nil
 }
 
@@ -136,6 +137,58 @@ func (c *command) IsRunning() bool {
 
 const restartKillAttempts = 5
 
+// SigTermPGID will send SIGTERM to the entire process group for this command.
+func (c *command) SigTermPGID() {
+	if c.RequiresSigKill {
+		return
+	}
+
+	if debug {
+		c.Out <- "Will send SIGTERM to the entire process group"
+	}
+
+	// Get the process group ID
+	pgid, err := syscall.Getpgid(c.Cmd.Process.Pid)
+	// ESRCH = process already terminated
+	if err != nil && err != syscall.ESRCH {
+		c.Err <- fmt.Sprintf("Failed to get process group ID: %v (%#v)", err, err)
+	}
+
+	// Send SIGTERM to the entire process group
+	if err := syscall.Kill(-pgid, syscall.SIGTERM); err != nil && err != syscall.ESRCH {
+		c.Err <- fmt.Sprintf("Error while sending SIGTERM to process group: %v (%#v)", err, err)
+	}
+}
+
+// WaitUntilKilled repeatedly tries to kill this command. If this did not work after
+// maxNumberOfAttempts tries, this will return an error. If the process did die at some point, this will return
+// nil.
+func (c *command) WaitUntilKilled(
+	maxNumberOfAttempts int,
+	timeout time.Duration,
+	errChan chan<- error,
+	outChan chan<- string,
+) error {
+	attempts := 0
+	for c.IsRunning() {
+		c.Kill(errChan, outChan)
+		if c.IsRunning() {
+			if debug {
+				c.Out <- "Command is still running, waiting for it to die so it can restart"
+			}
+			time.Sleep(timeout * time.Second)
+			attempts++
+			if attempts > maxNumberOfAttempts {
+				return fmt.Errorf(
+					"could not kill existing command %q, restart cancelled",
+					c.Name,
+				)
+			}
+		}
+	}
+	return nil
+}
+
 // Restart a command. If the command is done, this will immediately relaunch it. If not, it will
 // kill the existing process and wait until it exits. This is done on the current thread, callers beware.
 func (c *command) Restart(
@@ -145,31 +198,37 @@ func (c *command) Restart(
 	errChan chan<- error,
 	outChan chan<- string,
 ) error {
+	c.restartMutex.Lock()
+	defer c.restartMutex.Unlock()
 	if c.IsRunning() {
-		// If the command has sub processes, we need to kill the entire process group so no
-		// interrupts for you (i'm sorry)
-		// @TODO: Maybe we should send interrupts to the entire process group instead of only the
-		// main process? This needs some more experimenting
-		if !c.SpawnsSubprocesses {
-			// One of these should work for most applications
-			_ = c.Cmd.Process.Signal(syscall.SIGTERM)
-			_ = c.Cmd.Process.Signal(syscall.SIGINT)
-			time.Sleep(time.Duration(cfg.App.ShutdownTimeout) * time.Second)
+		if debug {
+			c.Out <- "Restart requested but command still running"
 		}
-		if c.IsRunning() {
-			c.Kill(errChan, outChan)
-			attempts := 0
-			for c.IsRunning() {
-				c.Out <- "Command is still running, waiting for it to die so it can restart"
-				time.Sleep(time.Duration(cfg.App.ShutdownTimeout) * time.Second)
-				attempts++
-				if attempts > restartKillAttempts {
-					return fmt.Errorf(
-						"could not kill existing command %q, restart cancelled",
-						c.Name,
-					)
-				}
-			}
+
+		// Sending SIGTERM to a group does not always seem to kill the subprocesses correctly for
+		// some commands, although this only happens very infrequently or on specific OSes. In order
+		// to favour the application always restarting correctly, we just immediately sigkill those
+		// processes.
+		c.SigTermPGID()
+
+		time.Sleep(time.Duration(cfg.App.ShutdownTimeout) * time.Second)
+
+		if !c.RequiresSigKill && c.IsRunning() {
+			c.Out <- "Command seemingly did not respond to SIGTERM, sending SIGKILL now"
+		}
+
+		err := c.WaitUntilKilled(
+			restartKillAttempts,
+			time.Duration(cfg.App.ShutdownTimeout+1),
+			errChan,
+			outChan,
+		)
+		if err != nil {
+			return err
+		}
+	} else {
+		if debug {
+			c.Out <- "Restart requested"
 		}
 	}
 
@@ -177,7 +236,7 @@ func (c *command) Restart(
 		ctx,
 		c.Name,
 		c.Style,
-		c.SpawnsSubprocesses,
+		c.RequiresSigKill,
 		c.RunAtStart,
 		c.FullCommand, //nolint:govet // we can be 100% sure this string has already been formatted correctly
 	)
@@ -208,7 +267,7 @@ func (c *command) Restart(
 //
 //nolint:cyclop
 func (c *command) Kill(errChan chan<- error, outChan chan<- string) {
-	if c.Cmd.ProcessState != nil && c.Cmd.ProcessState.Exited() && !c.SpawnsSubprocesses {
+	if c.Cmd.ProcessState != nil && c.Cmd.ProcessState.Exited() && !c.RequiresSigKill {
 		return
 	}
 

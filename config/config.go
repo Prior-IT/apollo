@@ -69,8 +69,8 @@ type AppConfig struct {
 	Host                   string
 	URL                    string
 	Name                   string
-	ShutdownTimeout        float32 `default:"1.5"` // in seconds
-	Env                    AppEnv  `default:"production"`
+	ShutdownTimeout        int32  `default:"2"` // in seconds
+	Env                    AppEnv `default:"production"`
 	Version                string
 	RequestTimeout         uint32 `default:"30"` // in seconds
 	AuthenticationKey      string `                     mapstructure:"AUTHKEY"`
