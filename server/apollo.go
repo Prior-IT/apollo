@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"reflect"
 	"strings"
+	"time"
 
 	"github.com/a-h/templ"
 	"github.com/go-chi/httplog/v2"
@@ -193,8 +195,17 @@ func (apollo *Apollo) GetPath(key string) string {
 //		return fmt.Errorf("cannot parse body: %w", err)
 //	}
 func (apollo *Apollo) ParseBody(v interface{}) error {
+	// Custom converter to parse dates to time.Time values
+	dateConverter := func(date string) reflect.Value {
+		if v, err := time.Parse(time.DateOnly, date); err == nil {
+			return reflect.ValueOf(v)
+		}
+		return reflect.Value{}
+	}
+
 	if apollo.decoder == nil {
 		apollo.decoder = schema.NewDecoder()
+		apollo.decoder.RegisterConverter(time.Time{}, dateConverter) // register the custom converter
 	}
 	err := apollo.Request.ParseForm()
 	if err != nil {
