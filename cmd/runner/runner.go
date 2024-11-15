@@ -206,12 +206,15 @@ func createCommands(
 		return []*command{}, nil, fmt.Errorf("Cannot create go builder: %w", err)
 	}
 
-	// Rebuild whenever a go file changes
+	// Rebuild whenever an application file changes
 	compilerDebouncer := debounce.New(time.Duration(cfg.Tools.Debounce) * time.Millisecond)
 	go onEvent(evFileChanged, func(ev event) bool {
-		if strings.HasSuffix(ev.payload, ".go") {
+		if strings.HasSuffix(ev.payload, ".go") || // source file
+			strings.HasSuffix(ev.payload, "/go.sum") || // dependency
+			strings.HasSuffix(ev.payload, "/config.toml") || // configuration
+			strings.Contains(ev.payload, "/.env") { // environment configuration
 			compilerDebouncer(func() {
-				compiler.Out <- "Go file change detected, rerunning command"
+				compiler.Out <- "Application file change detected, rerunning command"
 				err := compiler.Restart(ctx, cfg, &wg, errChan, outChan)
 				if err != nil {
 					compiler.Err <- err.Error()
@@ -241,20 +244,6 @@ func createCommands(
 		if ev.payload == "go" {
 			appDebouncer(func() {
 				application.Out <- "Application rebuilt, restarting"
-				err := application.Restart(ctx, cfg, &wg, errChan, outChan)
-				if err != nil {
-					application.Err <- err.Error()
-				}
-			})
-		}
-		return true
-	})
-
-	// Restart application if a configuration file changes
-	go onEvent(evFileChanged, func(ev event) bool {
-		if strings.Contains(ev.payload, "/config.toml") || strings.Contains(ev.payload, "/.env") {
-			appDebouncer(func() {
-				application.Out <- "Configuration changed, restarting"
 				err := application.Restart(ctx, cfg, &wg, errChan, outChan)
 				if err != nil {
 					application.Err <- err.Error()
