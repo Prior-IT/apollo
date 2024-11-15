@@ -209,7 +209,7 @@ func createCommands(
 	// Rebuild whenever a go file changes
 	compilerDebouncer := debounce.New(time.Duration(cfg.Tools.Debounce) * time.Millisecond)
 	go onEvent(evFileChanged, func(ev event) bool {
-		if strings.HasSuffix(ev.payload, ".go") {
+		if strings.HasSuffix(ev.payload, ".go") || strings.HasSuffix(ev.payload, "/go.sum") {
 			compilerDebouncer(func() {
 				compiler.Out <- "Go file change detected, rerunning command"
 				err := compiler.Restart(ctx, cfg, &wg, errChan, outChan)
@@ -250,14 +250,14 @@ func createCommands(
 		return true
 	})
 
-	// Restart application if a configuration file changes
+	// Rebuild application if a configuration file changes
 	go onEvent(evFileChanged, func(ev event) bool {
-		if strings.Contains(ev.payload, "/config.toml") || strings.Contains(ev.payload, "/.env") {
+		if strings.HasSuffix(ev.payload, "/config.toml") || strings.HasSuffix(ev.payload, "/.env") {
 			appDebouncer(func() {
-				application.Out <- "Configuration changed, restarting"
-				err := application.Restart(ctx, cfg, &wg, errChan, outChan)
+				compiler.Out <- "Configuration changed, rebuilding"
+				err := compiler.Restart(ctx, cfg, &wg, errChan, outChan)
 				if err != nil {
-					application.Err <- err.Error()
+					compiler.Err <- err.Error()
 				}
 			})
 		}
