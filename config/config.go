@@ -41,6 +41,7 @@ type LogFormat string
 
 const (
 	LogFormatPlaintext LogFormat = "plaintext"
+	LogFormatColour    LogFormat = "colour"
 	LogFormatJSON      LogFormat = "json"
 )
 
@@ -93,9 +94,10 @@ type DatabaseConfig struct {
 }
 
 type LogConfig struct {
-	Format  LogFormat `default:"json"`
-	Level   LogLevel
-	Verbose bool
+	Format     LogFormat `default:"json"`
+	Level      LogLevel
+	Verbose    bool
+	TimeFormat string
 }
 
 type OauthProviderConfig struct {
