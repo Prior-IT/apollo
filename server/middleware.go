@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/go-chi/httplog/v2"
 	"github.com/prior-it/apollo/config"
 	"github.com/prior-it/apollo/core"
@@ -190,6 +191,12 @@ func HTTPLogger(cfg *config.Config) func(http.Handler) http.Handler {
 	if cfg.Log.Verbose || cfg.App.Debug {
 		sourceFieldName = "source"
 	}
+
+	var replaceAttrsOverride func(groups []string, a slog.Attr) slog.Attr
+	if cfg.Log.Format == config.LogFormatColour {
+		replaceAttrsOverride = ReplaceSlogAttributes(cfg)
+	}
+
 	logger := httplog.NewLogger(cfg.App.Name, httplog.Options{
 		LogLevel: cfg.Log.Level.ToSlog(),
 		JSON:     cfg.Log.Format == config.LogFormatJSON,
@@ -199,6 +206,8 @@ func HTTPLogger(cfg *config.Config) func(http.Handler) http.Handler {
 			"env":     string(cfg.App.Env),
 		},
 		RequestHeaders:  cfg.Log.Verbose,
+		TimeFieldFormat: cfg.Log.TimeFormat,
+		TimeFieldName:   slog.TimeKey,
 		ResponseHeaders: cfg.Log.Verbose,
 		QuietDownRoutes: []string{
 			"/",
@@ -207,8 +216,52 @@ func HTTPLogger(cfg *config.Config) func(http.Handler) http.Handler {
 			"/static",
 			"/apollo",
 		},
-		QuietDownPeriod: 10 * time.Second, //nolint:mnd
-		SourceFieldName: sourceFieldName,
+		QuietDownPeriod:      10 * time.Second, //nolint:mnd
+		SourceFieldName:      sourceFieldName,
+		ReplaceAttrsOverride: replaceAttrsOverride,
 	})
 	return httplog.RequestLogger(logger)
+}
+
+var colouredLogLevels = map[string]*color.Color{
+	slog.LevelDebug.String(): color.New(color.Faint),
+	slog.LevelInfo.String():  color.New(color.FgGreen),
+	slog.LevelWarn.String():  color.New(color.FgYellow),
+	slog.LevelError.String(): color.New(color.FgRed),
+}
+
+// This is used by slog to maintain a consistent output over different logging libraries,
+// application code should never call this directly unless you're 100% sure what you're doing.
+func ReplaceSlogAttributes(cfg *config.Config) func(groups []string, a slog.Attr) slog.Attr {
+	// If the log format was explicitely set to colour, force all logging libraries to always output escape
+	// codes instead of trying to auto-detect the environment
+	if cfg.Log.Format == config.LogFormatColour {
+		color.NoColor = false
+		httplog.IsTTY = true
+	}
+	return func(groups []string, attr slog.Attr) slog.Attr {
+		if len(groups) == 0 && attr.Key == slog.TimeKey {
+			v, ok := attr.Value.Any().(string)
+			if !ok {
+				t := attr.Value.Any().(time.Time)
+				v = t.Format(cfg.Log.TimeFormat)
+			}
+			return slog.String(slog.TimeKey,
+				color.New(color.Faint).Sprint(v),
+			)
+		}
+
+		if len(groups) == 0 && attr.Key == slog.LevelKey {
+			level, ok := attr.Value.Any().(string)
+			if !ok {
+				level = attr.Value.Any().(slog.Level).String()
+			}
+			return slog.String(
+				slog.LevelKey,
+				colouredLogLevels[level].Sprintf("[%v]", level),
+			)
+		}
+
+		return attr
+	}
 }

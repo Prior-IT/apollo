@@ -11,6 +11,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/lmittmann/tint"
 	"github.com/prior-it/apollo/components"
 	"github.com/prior-it/apollo/config"
 	"github.com/prior-it/apollo/postgres"
@@ -131,13 +132,16 @@ func createLogger(cfg *config.Config) *slog.Logger {
 	}
 	switch cfg.Log.Format {
 	case config.LogFormatPlaintext:
-		{
-			logger = slog.New(slog.NewTextHandler(os.Stdout, loggerOptions))
-		}
+		logger = slog.New(slog.NewTextHandler(os.Stdout, loggerOptions))
 	case config.LogFormatJSON:
-		{
-			logger = slog.New(slog.NewJSONHandler(os.Stdout, loggerOptions))
-		}
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, loggerOptions))
+	case config.LogFormatColour:
+		logger = slog.New(tint.NewHandler(os.Stdout, &tint.Options{
+			AddSource:   loggerOptions.AddSource,
+			Level:       loggerOptions.Level,
+			TimeFormat:  cfg.Log.TimeFormat,
+			ReplaceAttr: server.ReplaceSlogAttributes(cfg),
+		}))
 	}
 	slog.SetDefault(logger)
 	return logger
