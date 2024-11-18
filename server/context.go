@@ -22,7 +22,22 @@ const (
 	ctxIsAdmin
 	ctxNewCSRFToken
 	ctxOldCSRFToken
+	ctxFlags
+	ctxEnableAll
 )
+
+func allFeatureFlagsEnabled(ctx context.Context) bool {
+	v, ok := ctx.Value(ctxEnableAll).(bool)
+	return ok && v
+}
+
+func HasFeature(ctx context.Context, feature string) bool {
+	if allFeatureFlagsEnabled(ctx) {
+		return true
+	}
+	v, ok := ctx.Value(ctxFlags).(map[string]bool)
+	return ok && v[feature]
+}
 
 func IsLoggedIn(ctx context.Context) bool {
 	loggedIn, ok := ctx.Value(ctxLoggedIn).(bool)
