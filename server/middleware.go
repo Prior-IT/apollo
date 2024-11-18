@@ -167,6 +167,17 @@ func (server *Server[state]) SessionMiddleware() func(http.Handler) http.Handler
 	}
 }
 
+func (server *Server[state]) FeatureFlagMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		ctx = context.WithValue(ctx, ctxFlags, server.cfg.Features.Flags)
+		ctx = context.WithValue(ctx, ctxEnableAll, server.cfg.Features.EnableAll)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 // Debug is middleware that can be inserted anywhere and will print some useful debug information about the current
 // request.
 func Debug(printFullRequest bool) func(http.Handler) http.Handler {

@@ -187,6 +187,7 @@ func (server *Server[state]) AttachDefaultMiddleware() {
 		server.CSRFTokenMiddleware(),
 		// @TODO: Page caching
 		server.ContextMiddleware,
+		server.FeatureFlagMiddleware,
 	)
 }
 

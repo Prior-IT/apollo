@@ -58,6 +58,7 @@ type Config struct {
 	Log            LogConfig
 	OAuthProviders map[string]OauthProviderConfig `mapstructure:"OAUTH"`
 	Tools          ToolsConfig
+	Features       FeaturesConfig
 }
 
 type AppConfig struct {
@@ -125,6 +126,11 @@ type ToolsConfig struct {
 	BuildDir    string `default:"./tmp"`
 	IgnoreDirs  []string
 	OpenBrowser bool
+}
+
+type FeaturesConfig struct {
+	EnableAll bool
+	Flags     map[string]bool
 }
 
 func (c Config) BaseURL() string {
