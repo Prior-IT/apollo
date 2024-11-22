@@ -212,6 +212,7 @@ func createCommands(
 		if strings.HasSuffix(ev.payload, ".go") || // source file
 			strings.HasSuffix(ev.payload, "/go.sum") || // dependency
 			strings.HasSuffix(ev.payload, "/config.toml") || // configuration
+			strings.HasSuffix(ev.payload, ".yaml") || // configuration and translations
 			strings.Contains(ev.payload, "/.env") { // environment configuration
 			compilerDebouncer(func() {
 				compiler.Out <- "Application file change detected, rerunning command"

@@ -29,6 +29,8 @@ require (
 	github.com/vearutop/statigz v1.4.3
 )
 
+require github.com/invopop/yaml v0.2.0 // indirect
+
 require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gorilla/securecookie v1.1.2 // indirect
@@ -70,6 +72,7 @@ require (
 	github.com/charmbracelet/x/term v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
+	github.com/invopop/ctxi18n v0.8.1
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
