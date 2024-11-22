@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 
 	"github.com/invopop/ctxi18n"
 	"github.com/invopop/ctxi18n/i18n"
@@ -37,9 +38,19 @@ func DetectLanguage[state any](apollo *Apollo, _ state) (context.Context, error)
 		return ctx, nil
 	}
 
+	// NOTE: We need to reset this on every request because you shouldn't use singletons for
+	// things like this but I'm also too lazy to fix ctxi18n right now - robin
+	ctxi18n.DefaultLocale = i18n.Code(apollo.Cfg.App.FallbackLang)
+
 	lang := apollo.Request.Header.Get("Accept-Language")
 
-	// If lang is empty this will already do the correct fallback
+	// This is here for logging, ctxi18n should already use the fallback if lang is empty
+	if len(lang) == 0 {
+		lang = apollo.Cfg.App.FallbackLang
+	}
+
+	apollo.LogField("lang", slog.StringValue(lang))
+
 	ctx, err := ctxi18n.WithLocale(ctx, lang)
 	if errors.Is(err, ctxi18n.ErrMissingLocale) {
 		err = fmt.Errorf(
