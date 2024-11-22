@@ -44,13 +44,6 @@ func DetectLanguage[state any](apollo *Apollo, _ state) (context.Context, error)
 
 	lang := apollo.Request.Header.Get("Accept-Language")
 
-	// This is here for logging, ctxi18n should already use the fallback if lang is empty
-	if len(lang) == 0 {
-		lang = apollo.Cfg.App.FallbackLang
-	}
-
-	apollo.LogField("lang", slog.StringValue(lang))
-
 	ctx, err := ctxi18n.WithLocale(ctx, lang)
 	if errors.Is(err, ctxi18n.ErrMissingLocale) {
 		err = fmt.Errorf(
@@ -60,5 +53,12 @@ func DetectLanguage[state any](apollo *Apollo, _ state) (context.Context, error)
 		)
 	}
 
+	apollo.LogField("lang", slog.StringValue(string(ctxi18n.Locale(ctx).Code())))
+
 	return ctx, err
+}
+
+// Return the 2-letter code for the language that is currently active
+func Language(ctx context.Context) string {
+	return string(ctxi18n.Locale(ctx).Code())
 }
