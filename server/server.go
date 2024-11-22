@@ -155,7 +155,7 @@ func ConvertToApolloMiddleware[state State](
 }
 
 // Utility function that converts Apollo middleware to a http handler
-func (server *Server[state]) HandlerMiddleware(
+func (server *Server[state]) MiddlewareHandler(
 	middleware Middleware[state],
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -188,6 +188,7 @@ func (server *Server[state]) AttachDefaultMiddleware() {
 		// @TODO: Page caching
 		server.ContextMiddleware,
 		server.FeatureFlagMiddleware,
+		server.MiddlewareHandler(DetectLanguage),
 	)
 }
 
@@ -283,7 +284,7 @@ func (server *Server[state]) Use(
 	middlewares ...Middleware[state],
 ) *Server[state] {
 	for _, mi := range middlewares {
-		server.mux.Use(server.HandlerMiddleware(mi))
+		server.mux.Use(server.MiddlewareHandler(mi))
 	}
 	return server
 }
