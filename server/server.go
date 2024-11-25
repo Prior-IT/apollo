@@ -188,6 +188,7 @@ func (server *Server[state]) AttachDefaultMiddleware() {
 		// @TODO: Page caching
 		server.ContextMiddleware,
 		server.FeatureFlagMiddleware,
+		server.MiddlewareHandler(InjectApollo),
 		server.MiddlewareHandler(DetectLanguage),
 	)
 }

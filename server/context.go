@@ -18,6 +18,7 @@ const (
 	ctxOrganisationName
 	ctxOrganisationParent
 	ctxSession
+	ctxApollo
 	ctxConfig
 	ctxIsAdmin
 	ctxNewCSRFToken
