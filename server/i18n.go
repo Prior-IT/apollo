@@ -44,6 +44,10 @@ func DetectLanguage[state any](apollo *Apollo, _ state) (context.Context, error)
 
 	lang := apollo.Request.Header.Get("Accept-Language")
 
+	if len(apollo.User.Lang) > 0 {
+		lang = apollo.User.Lang
+	}
+
 	ctx, err := ctxi18n.WithLocale(ctx, lang)
 	if errors.Is(err, ctxi18n.ErrMissingLocale) {
 		err = fmt.Errorf(
