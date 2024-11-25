@@ -42,6 +42,7 @@ type Apollo struct {
 // E.g. fields that are stored in the active session.
 func (apollo *Apollo) populate() {
 	apollo.ctx = apollo.Request.Context()
+
 	if apollo.store != nil {
 		apollo.populateUser()
 		apollo.populateOrganisation()
@@ -91,6 +92,20 @@ func (apollo *Apollo) populateOrganisation() {
 		apollo.Organisation = organisation
 		apollo.LogField("active_organisation_id", slog.AnyValue(apollo.Organisation.ID))
 	}
+}
+
+func InjectApollo[state any](apollo *Apollo, _ state) (context.Context, error) {
+	ctx := apollo.Context()
+	ctx = context.WithValue(ctx, ctxApollo, apollo)
+	return ctx, nil
+}
+
+func Ap(ctx context.Context) *Apollo {
+	apollo, ok := ctx.Value(ctxApollo).(*Apollo)
+	if !ok {
+		panic("You need to inject the apollo object in the context before you can retrieve it")
+	}
+	return apollo
 }
 
 func (apollo *Apollo) StatusCode(code int) {
