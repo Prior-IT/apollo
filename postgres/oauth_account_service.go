@@ -46,7 +46,11 @@ func (s *PgOauthAccountService) CreateUserAccount(
 		return nil, err
 	}
 
-	user, err := qtx.CreateUser(ctx, data.Name, email.String())
+	user, err := qtx.CreateUser(ctx, sqlc.CreateUserParams{
+		Name:  data.Name,
+		Email: email.String(),
+		Lang:  data.Lang,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create user: %w", err)
 	}

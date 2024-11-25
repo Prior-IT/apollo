@@ -41,7 +41,7 @@ func (q *Queries) DeleteAccount(ctx context.Context, provider string, providerID
 
 const getUserForProvider = `-- name: GetUserForProvider :one
 SELECT
-    users.id, users.name, users.email, users.joined, users.admin
+    users.id, users.name, users.email, users.joined, users.admin, users.lang
 FROM
     users
     INNER JOIN accounts ON users.id = accounts.user_id
@@ -60,6 +60,7 @@ func (q *Queries) GetUserForProvider(ctx context.Context, provider string, provi
 		&i.Email,
 		&i.Joined,
 		&i.Admin,
+		&i.Lang,
 	)
 	return i, err
 }

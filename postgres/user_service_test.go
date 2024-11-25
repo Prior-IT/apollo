@@ -54,7 +54,7 @@ func TestUserService(t *testing.T) {
 				description: "name and email empty",
 			},
 		} {
-			user, err := service.CreateUser(ctx, data.name, data.email)
+			user, err := service.CreateUser(ctx, data.name, data.email, "nl")
 			if data.email != nil {
 				tests.Check(err)
 				assert.NotNil(t, user, data.description)
@@ -69,11 +69,11 @@ func TestUserService(t *testing.T) {
 	t.Run("err: create duplicate user", func(t *testing.T) {
 		email, err := core.NewEmailAddress(tests.Faker.Email())
 		tests.Check(err)
-		user1, err := service.CreateUser(ctx, tests.Faker.Name(), email)
+		user1, err := service.CreateUser(ctx, tests.Faker.Name(), email, "nl")
 		tests.Check(err)
 		assert.NotNil(t, user1, "The first user should be created correctly")
 
-		user2, err := service.CreateUser(ctx, tests.Faker.Name(), email)
+		user2, err := service.CreateUser(ctx, tests.Faker.Name(), email, "nl")
 		assert.NotNil(t, err, "The duplicate user should return an error")
 		assert.Nil(t, user2, "The duplicate user should return nil for the user")
 		assert.ErrorIs(t, err, core.ErrConflict, "The duplicate user should return ErrConflict")
@@ -82,7 +82,7 @@ func TestUserService(t *testing.T) {
 	t.Run("ok: get user", func(t *testing.T) {
 		email, err := core.NewEmailAddress("getuserok@example.com")
 		tests.Check(err)
-		user, err := service.CreateUser(ctx, tests.Faker.Name(), email)
+		user, err := service.CreateUser(ctx, tests.Faker.Name(), email, "nl")
 		tests.Check(err)
 
 		user2, err := service.GetUser(ctx, user.ID)
@@ -94,7 +94,7 @@ func TestUserService(t *testing.T) {
 	t.Run("ok: delete user", func(t *testing.T) {
 		email, err := core.NewEmailAddress("deleteuserok@example.com")
 		tests.Check(err)
-		user, err := service.CreateUser(ctx, tests.Faker.Name(), email)
+		user, err := service.CreateUser(ctx, tests.Faker.Name(), email, "nl")
 		tests.Check(err)
 
 		tests.Check(service.DeleteUser(ctx, user.ID))
@@ -108,7 +108,7 @@ func TestUserService(t *testing.T) {
 	t.Run("ok: update user admin", func(t *testing.T) {
 		email, err := core.NewEmailAddress("updateadminok@example.com")
 		tests.Check(err)
-		user, err := service.CreateUser(ctx, tests.Faker.Name(), email)
+		user, err := service.CreateUser(ctx, tests.Faker.Name(), email, "nl")
 		tests.Check(err)
 		assert.False(t, user.Admin, "Admin should be false by default")
 
@@ -131,7 +131,7 @@ func TestUserService(t *testing.T) {
 		email, err := core.NewEmailAddress("updateuseremptyok@example.com")
 		tests.Check(err)
 		name := tests.Faker.Name()
-		user, err := service.CreateUser(ctx, name, email)
+		user, err := service.CreateUser(ctx, name, email, "nl")
 		tests.Check(err)
 		assert.Equal(t, name, user.Name)
 		assert.Equal(t, email, user.Email)
@@ -148,7 +148,7 @@ func TestUserService(t *testing.T) {
 		email, err := core.NewEmailAddress("updateusernameok@example.com")
 		tests.Check(err)
 		name := tests.Faker.Name()
-		user, err := service.CreateUser(ctx, name, email)
+		user, err := service.CreateUser(ctx, name, email, "nl")
 		tests.Check(err)
 		assert.Equal(t, name, user.Name)
 		assert.Equal(t, email, user.Email)
@@ -166,7 +166,7 @@ func TestUserService(t *testing.T) {
 		email, err := core.NewEmailAddress("updateuseremailok@example.com")
 		tests.Check(err)
 		name := tests.Faker.Name()
-		user, err := service.CreateUser(ctx, name, email)
+		user, err := service.CreateUser(ctx, name, email, "nl")
 		tests.Check(err)
 		assert.Equal(t, name, user.Name)
 		assert.Equal(t, email, user.Email)
@@ -187,7 +187,7 @@ func TestUserService(t *testing.T) {
 		email, err := core.NewEmailAddress("updateuserbothok@example.com")
 		tests.Check(err)
 		name := tests.Faker.Name()
-		user, err := service.CreateUser(ctx, name, email)
+		user, err := service.CreateUser(ctx, name, email, "nl")
 		tests.Check(err)
 		assert.Equal(t, name, user.Name)
 		assert.Equal(t, email, user.Email)
@@ -206,5 +206,25 @@ func TestUserService(t *testing.T) {
 		assert.NotNil(t, user, "User should still exist after update")
 		assert.Equal(t, newName, user.Name, "Name should change after update")
 		assert.Equal(t, newEmail, user.Email, "Email should change after update")
+	})
+
+	t.Run("ok: update user - language", func(t *testing.T) {
+		email, err := core.NewEmailAddress("updateuseremailok@example.com")
+		assert.Nil(t, err)
+		lang := tests.Faker.Language()
+		user, err := service.CreateUser(ctx, tests.Faker.Name(), email, lang)
+		assert.Nil(t, err)
+		assert.Equal(t, lang, user.Lang)
+		assert.Equal(t, email, user.Email)
+
+		// Lang update
+		newLang := tests.Faker.Language()
+		assert.Nil(t, err)
+		user, err = service.UpdateUser(ctx, user.ID, core.UserUpdate{Lang: &newLang})
+		assert.Nil(t, err)
+
+		assert.NotNil(t, user, "User should still exist after update")
+		assert.Equal(t, email, user.Email, "Email should not change after lang update")
+		assert.Equal(t, newLang, user.Lang, "Language should change after lang update")
 	})
 }

@@ -178,7 +178,7 @@ func (q *Queries) ListOrganisationsForUser(ctx context.Context, userID int32) ([
 
 const listUsersInOrganisation = `-- name: ListUsersInOrganisation :many
 SELECT
-    u.id, u.name, u.email, u.joined, u.admin
+    u.id, u.name, u.email, u.joined, u.admin, u.lang
 FROM
     users AS u
     INNER JOIN organisation_users AS ou ON u.id = ou.user_id
@@ -201,6 +201,7 @@ func (q *Queries) ListUsersInOrganisation(ctx context.Context, organisationID in
 			&i.Email,
 			&i.Joined,
 			&i.Admin,
+			&i.Lang,
 		); err != nil {
 			return nil, err
 		}

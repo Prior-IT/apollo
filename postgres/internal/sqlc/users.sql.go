@@ -10,14 +10,20 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (name, email)
-    VALUES ($1, $2)
+INSERT INTO users (name, email, lang)
+    VALUES ($1, $2, $3)
 RETURNING
-    id, name, email, joined, admin
+    id, name, email, joined, admin, lang
 `
 
-func (q *Queries) CreateUser(ctx context.Context, name string, email string) (User, error) {
-	row := q.db.QueryRow(ctx, createUser, name, email)
+type CreateUserParams struct {
+	Name  string
+	Email string
+	Lang  string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser, arg.Name, arg.Email, arg.Lang)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -25,6 +31,7 @@ func (q *Queries) CreateUser(ctx context.Context, name string, email string) (Us
 		&i.Email,
 		&i.Joined,
 		&i.Admin,
+		&i.Lang,
 	)
 	return i, err
 }
@@ -55,7 +62,7 @@ func (q *Queries) GetAmountOfUsers(ctx context.Context) (int64, error) {
 
 const getUser = `-- name: GetUser :one
 SELECT
-    id, name, email, joined, admin
+    id, name, email, joined, admin, lang
 FROM
     users
 WHERE
@@ -72,13 +79,14 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 		&i.Email,
 		&i.Joined,
 		&i.Admin,
+		&i.Lang,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
 SELECT
-    id, name, email, joined, admin
+    id, name, email, joined, admin, lang
 FROM
     users
 ORDER BY
@@ -100,6 +108,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.Email,
 			&i.Joined,
 			&i.Admin,
+			&i.Lang,
 		); err != nil {
 			return nil, err
 		}
@@ -116,21 +125,28 @@ UPDATE
     users
 SET
     name = COALESCE($2, name),
-    email = COALESCE($3, email)
+    email = COALESCE($3, email),
+    lang = COALESCE($4, lang)
 WHERE
     id = $1
 RETURNING
-    id, name, email, joined, admin
+    id, name, email, joined, admin, lang
 `
 
 type UpdateUserParams struct {
 	ID    int32
 	Name  *string
 	Email *string
+	Lang  *string
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, updateUser, arg.ID, arg.Name, arg.Email)
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.ID,
+		arg.Name,
+		arg.Email,
+		arg.Lang,
+	)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -138,6 +154,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.Email,
 		&i.Joined,
 		&i.Admin,
+		&i.Lang,
 	)
 	return i, err
 }
