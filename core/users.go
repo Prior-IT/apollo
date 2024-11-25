@@ -14,6 +14,7 @@ type User struct {
 	Name   string
 	Email  EmailAddress
 	Admin  bool
+	Lang   string
 	Joined time.Time
 }
 
@@ -26,11 +27,12 @@ type UserID = ID
 type UserUpdate struct {
 	Name  *string
 	Email *string
+	Lang  *string
 }
 
 type UserService interface {
 	// Create a new user with the specified data.
-	CreateUser(ctx context.Context, name string, email EmailAddress) (*User, error)
+	CreateUser(ctx context.Context, name string, email EmailAddress, lang string) (*User, error)
 	// Retrieve the user with the specified id or ErrUserDoesNotExist if no such user exists.
 	GetUser(ctx context.Context, id UserID) (*User, error)
 	// Retrieve all existing users.

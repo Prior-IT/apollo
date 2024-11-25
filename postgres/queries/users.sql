@@ -22,8 +22,8 @@ FROM
     users;
 
 -- name: CreateUser :one
-INSERT INTO users (name, email)
-    VALUES ($1, $2)
+INSERT INTO users (name, email, lang)
+    VALUES ($1, $2, $3)
 RETURNING
     *;
 
@@ -43,8 +43,9 @@ WHERE
 UPDATE
     users
 SET
-    name = COALESCE(sqlc.narg(name), name),
-    email = COALESCE(sqlc.narg(email), email)
+    name = COALESCE(sqlc.narg (name), name),
+    email = COALESCE(sqlc.narg (email), email),
+    lang = COALESCE(sqlc.narg (lang), lang)
 WHERE
     id = $1
 RETURNING

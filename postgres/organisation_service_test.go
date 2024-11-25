@@ -153,7 +153,7 @@ func TestOrganisationService(t *testing.T) {
 		// Add user to organisation
 		email, err := core.NewEmailAddress("getuserok@example.com")
 		tests.Check(err)
-		user, err := UserService.CreateUser(ctx, tests.Faker.Name(), email)
+		user, err := UserService.CreateUser(ctx, tests.Faker.Name(), email, "nl")
 		tests.Check(err)
 
 		tests.Check(service.AddUser(ctx, user.ID, organisation.ID))
@@ -174,13 +174,13 @@ func TestOrganisationService(t *testing.T) {
 	t.Run("ok: deleting user removes user from organisation", func(t *testing.T) {
 		name := tests.Faker.BS()
 		organisation, err := service.CreateOrganisation(ctx, name, nil)
-		tests.Check(err)
+		assert.Nil(t, err)
 
 		// Add user to organisation
 		email, err := core.NewEmailAddress("deleteuserok@example.com")
-		tests.Check(err)
-		user, err := UserService.CreateUser(ctx, tests.Faker.Name(), email)
-		tests.Check(err)
+		assert.Nil(t, err)
+		user, err := UserService.CreateUser(ctx, tests.Faker.Name(), email, "nl")
+		assert.Nil(t, err)
 
 		tests.Check(service.AddUser(ctx, user.ID, organisation.ID))
 

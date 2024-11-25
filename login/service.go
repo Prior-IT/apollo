@@ -11,6 +11,7 @@ import (
 type UserData struct {
 	Name  string `form:"name"        json:"name"`
 	Email string `form:"email"       json:"email"`
+	Lang  string `form:"lang"        json:"lang"`
 	// Either an OAuth provider or the login method
 	Provider string `form:"provider"    json:"provider"`
 	// External user id, currently only used with OAuth

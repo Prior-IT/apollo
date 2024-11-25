@@ -71,6 +71,7 @@ type User struct {
 	Email  string
 	Joined pgtype.Timestamptz
 	Admin  bool
+	Lang   string
 }
 
 type UserPermissiongroupMembership struct {

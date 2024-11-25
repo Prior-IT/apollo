@@ -26,11 +26,16 @@ func (u *UserService) CreateUser(
 	ctx context.Context,
 	name string,
 	email core.EmailAddress,
+	lang string,
 ) (*core.User, error) {
 	if email == nil {
 		return nil, errors.New("email cannot be nil")
 	}
-	user, err := u.q.CreateUser(ctx, name, email.String())
+	user, err := u.q.CreateUser(ctx, sqlc.CreateUserParams{
+		Name:  name,
+		Email: email.String(),
+		Lang:  lang,
+	})
 	if err != nil {
 		return nil, ConvertPgError(err)
 	}
@@ -84,6 +89,7 @@ func (u *UserService) UpdateUser(
 		ID:    int32(id),
 		Name:  data.Name,
 		Email: data.Email,
+		Lang:  data.Lang,
 	})
 	if err != nil {
 		return nil, err
@@ -102,6 +108,7 @@ func convertUser(user sqlc.User) (*core.User, error) {
 		Name:   user.Name,
 		Email:  email,
 		Admin:  user.Admin,
+		Lang:   user.Lang,
 		Joined: user.Joined.Time,
 	}, nil
 }

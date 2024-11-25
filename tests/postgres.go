@@ -80,7 +80,7 @@ func CreateRegularUser(service core.UserService) *core.User {
 	if err != nil {
 		log.Fatal(err)
 	}
-	user, err := service.CreateUser(context.Background(), Faker.Name(), email)
+	user, err := service.CreateUser(context.Background(), Faker.Name(), email, "nl")
 	if err != nil {
 		log.Fatalf("cannot create regular user: %v", err)
 	}
