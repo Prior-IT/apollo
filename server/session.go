@@ -23,6 +23,7 @@ const (
 	sessionIsAdmin            = "apollo-user-admin"
 	sessionUserName           = "apollo-user-name"
 	sessionEmail              = "apollo-user-email"
+	sessionLanguage           = "apollo-user-lang"
 	sessionJoined             = "apollo-user-joined"
 	sessionUserID             = "apollo-user-id"
 	sessionOrganisationID     = "apollo-organisation-id"
@@ -104,6 +105,7 @@ func (apollo *Apollo) Login(user *core.User) error {
 	session.Values[sessionUserName] = user.Name
 	session.Values[sessionEmail] = user.Email.String()
 	session.Values[sessionUserID] = user.ID
+	session.Values[sessionLanguage] = user.Lang
 	session.Values[sessionJoined] = user.Joined
 	apollo.User = user
 	err := apollo.store.Save(apollo.Request, apollo.Writer, session)
@@ -148,6 +150,8 @@ func (apollo *Apollo) SetActiveOrganisation(organisation *core.Organisation) err
 
 // Utility function that retrieves a full core.User object from the current session, if one exists.
 // If there is no active session, this will return core.ErrUnauthenticated
+//
+//nolint:cyclop
 func (apollo *Apollo) retrieveUser() (*core.User, error) {
 	session := apollo.Session()
 
@@ -196,6 +200,14 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 		return nil, fmt.Errorf("session e-mail address invalid: %w", err)
 	}
 
+	lang, ok := session.Values[sessionLanguage].(string)
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid language stored in session: %v",
+			session.Values[sessionLanguage],
+		)
+	}
+
 	joined, ok := session.Values[sessionJoined].(time.Time)
 	if !ok {
 		return nil, fmt.Errorf(
@@ -209,6 +221,7 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 		Name:   name,
 		Email:  email,
 		Admin:  isAdmin,
+		Lang:   lang,
 		Joined: joined,
 	}, nil
 }
@@ -272,6 +285,7 @@ func (apollo *Apollo) Logout() error {
 	session.Values[sessionLoggedIn] = false
 	session.Values[sessionIsAdmin] = false
 	session.Values[sessionUserName] = nil
+	session.Values[sessionLanguage] = nil
 	session.Values[sessionUserID] = nil
 	session.Values[sessionOrganisationName] = nil
 	session.Values[sessionOrganisationID] = nil

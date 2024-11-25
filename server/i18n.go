@@ -42,9 +42,11 @@ func DetectLanguage[state any](apollo *Apollo, _ state) (context.Context, error)
 	// things like this but I'm also too lazy to fix ctxi18n right now - robin
 	ctxi18n.DefaultLocale = i18n.Code(apollo.Cfg.App.FallbackLang)
 
+	// Use the browser's language...
 	lang := apollo.Request.Header.Get("Accept-Language")
 
-	if len(apollo.User.Lang) > 0 {
+	// ... unless the user session has a different one
+	if apollo.User != nil && len(apollo.User.Lang) > 0 {
 		lang = apollo.User.Lang
 	}
 
