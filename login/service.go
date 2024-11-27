@@ -9,13 +9,13 @@ import (
 )
 
 type UserData struct {
-	Name  string `form:"name"        json:"name"`
-	Email string `form:"email"       json:"email"`
-	Lang  string `form:"lang"        json:"lang"`
+	Name  string `schema:"name"        json:"name"`
+	Email string `schema:"email"       json:"email"`
+	Lang  string `schema:"lang"        json:"lang"`
 	// Either an OAuth provider or the login method
-	Provider string `form:"provider"    json:"provider"`
+	Provider string `schema:"provider"    json:"provider"`
 	// External user id, currently only used with OAuth
-	ProviderID string `form:"provider_id" json:"provider_id"`
+	ProviderID string `schema:"provider_id" json:"provider_id"`
 }
 
 type UserDataCacheID struct {
