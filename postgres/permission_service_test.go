@@ -13,6 +13,7 @@ import (
 )
 
 func CreateUserWithPermissions(
+	t *testing.T,
 	db *postgres.DB,
 	Permissions map[permissions.Permission]bool,
 ) *core.User {
@@ -23,11 +24,11 @@ func CreateUserWithPermissions(
 	group, err := service.CreatePermissionGroup(ctx, &permissions.PermissionGroup{
 		Permissions: Permissions,
 	})
-	tests.Check(err)
+	assert.Nil(t, err)
 
 	user := tests.CreateRegularUser(userService)
 	err = service.AddUserToPermissionGroup(ctx, user.ID, group.ID)
-	tests.Check(err)
+	assert.Nil(t, err)
 
 	return user
 }
@@ -48,7 +49,7 @@ func TestPermissionService(t *testing.T) {
 	t.Run("ok: user without group", func(t *testing.T) {
 		user := tests.CreateRegularUser(userService)
 		perms, err := service.GetUserPermissions(ctx, user.ID)
-		tests.Check(err)
+		assert.Nil(t, err)
 		assert.NotNil(t, perms, "GetUserPermissions should never return nil, nil")
 
 		assert.Empty(t, perms, "User without any groups should not have any permissions")
@@ -59,13 +60,13 @@ func TestPermissionService(t *testing.T) {
 			Name:        "test",
 			Permissions: nil,
 		})
-		tests.Check(err)
+		assert.Nil(t, err)
 
 		group, err = service.GetPermissionGroup(ctx, group.ID)
-		tests.Check(err)
+		assert.Nil(t, err)
 
 		allPermissions, err := service.ListPermissions(ctx)
-		tests.Check(err)
+		assert.Nil(t, err)
 
 		for _, p := range allPermissions {
 			enabled, ok := group.Permissions[p]
@@ -83,7 +84,7 @@ func TestPermissionService(t *testing.T) {
 				permissions.PermViewOwnUser: true,
 			},
 		})
-		tests.Check(err)
+		assert.Nil(t, err)
 		group2, err := service.CreatePermissionGroup(ctx, &permissions.PermissionGroup{
 			Name: "group 2",
 			Permissions: map[permissions.Permission]bool{
@@ -91,15 +92,15 @@ func TestPermissionService(t *testing.T) {
 				permissions.PermViewAllOrganisations: true,
 			},
 		})
-		tests.Check(err)
+		assert.Nil(t, err)
 
 		// Add the test user to both groups
-		tests.Check(service.AddUserToPermissionGroup(ctx, user.ID, group1.ID))
-		tests.Check(service.AddUserToPermissionGroup(ctx, user.ID, group2.ID))
+		assert.Nil(t, service.AddUserToPermissionGroup(ctx, user.ID, group1.ID))
+		assert.Nil(t, service.AddUserToPermissionGroup(ctx, user.ID, group2.ID))
 
 		// Check that the user has the correct combination of permissions
 		perms, err := service.GetUserPermissions(ctx, user.ID)
-		tests.Check(err)
+		assert.Nil(t, err)
 		assert.NotNil(t, perms, "GetUserPermissions should never return nil, nil")
 		assert.NotEmpty(t, perms, "User with non-empty groups should have permissions")
 		for _, p := range []permissions.Permission{
@@ -112,7 +113,7 @@ func TestPermissionService(t *testing.T) {
 	})
 
 	t.Run("ok: existing enabled permission", func(t *testing.T) {
-		user := CreateUserWithPermissions(db, map[permissions.Permission]bool{
+		user := CreateUserWithPermissions(t, db, map[permissions.Permission]bool{
 			permissions.PermViewOwnUser:  true,
 			permissions.PermEditOwnUser:  true,
 			permissions.PermEditAllUsers: false,
@@ -123,7 +124,7 @@ func TestPermissionService(t *testing.T) {
 	})
 
 	t.Run("ok: existing disabled permission", func(t *testing.T) {
-		user := CreateUserWithPermissions(db, map[permissions.Permission]bool{
+		user := CreateUserWithPermissions(t, db, map[permissions.Permission]bool{
 			permissions.PermViewOwnUser:  true,
 			permissions.PermEditOwnUser:  true,
 			permissions.PermEditAllUsers: false,
@@ -134,7 +135,7 @@ func TestPermissionService(t *testing.T) {
 	})
 
 	t.Run("ok: missing permission should be false", func(t *testing.T) {
-		user := CreateUserWithPermissions(db, map[permissions.Permission]bool{
+		user := CreateUserWithPermissions(t, db, map[permissions.Permission]bool{
 			permissions.PermViewOwnUser:  true,
 			permissions.PermEditOwnUser:  true,
 			permissions.PermEditAllUsers: false,
@@ -145,7 +146,7 @@ func TestPermissionService(t *testing.T) {
 	})
 
 	t.Run("ok: non-existent permission should be false", func(t *testing.T) {
-		user := CreateUserWithPermissions(db, map[permissions.Permission]bool{
+		user := CreateUserWithPermissions(t, db, map[permissions.Permission]bool{
 			permissions.PermViewOwnUser:  true,
 			permissions.PermEditOwnUser:  true,
 			permissions.PermEditAllUsers: false,
@@ -153,5 +154,24 @@ func TestPermissionService(t *testing.T) {
 		result, err := service.HasAny(ctx, user.ID, permissions.Permission("i do not exist"))
 		assert.Nil(t, err)
 		assert.False(t, result, "Permission that does not exist should return false")
+	})
+
+	t.Run("ok: index is updated after creating a group with a hard-coded id", func(t *testing.T) {
+		ctx := context.Background()
+		service := postgres.NewPermissionService(db)
+
+		autoGroup1, err := service.CreatePermissionGroup(ctx, &permissions.PermissionGroup{})
+		assert.Nil(t, err)
+
+		fixedGroup, err := service.CreatePermissionGroup(ctx, &permissions.PermissionGroup{
+			ID: autoGroup1.ID + 12,
+		})
+		assert.Nil(t, err)
+
+		autoGroup2, err := service.CreatePermissionGroup(ctx, &permissions.PermissionGroup{})
+		assert.Nil(t, err)
+
+		assert.Greater(t, fixedGroup.ID, autoGroup1.ID)
+		assert.Greater(t, autoGroup2.ID, fixedGroup.ID)
 	})
 }

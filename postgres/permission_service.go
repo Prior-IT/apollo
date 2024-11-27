@@ -68,6 +68,14 @@ func (p *PermissionService) CreatePermissionGroup(
 				ConvertPgError(err),
 			)
 		}
+		err = q.UpdatePermissionGroupIndex(ctx)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"could not update the permission group index after adding id %v: %w",
+				Group.ID,
+				ConvertPgError(err),
+			)
+		}
 
 	} else {
 		NewGroup, err = q.CreatePermissionGroup(ctx, &Group.Name)

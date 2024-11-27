@@ -32,7 +32,14 @@ FROM
     permissiongroups pg
     INNER JOIN organisation_users_permissiongroups org_usr ON org_usr.permission_group_id = pg.id
 WHERE
-    org_usr.organisation_users_id = (SELECT id FROM organisation_users WHERE user_id = $1 AND organisation_id = $2);
+    org_usr.organisation_users_id = (
+        SELECT
+            id
+        FROM
+            organisation_users
+        WHERE
+            user_id = $1
+            AND organisation_id = $2);
 
 -- name: GetPermissionsForGroup :many
 SELECT
@@ -63,6 +70,13 @@ INSERT INTO permissiongroups (id, name)
 RETURNING
     *;
 
+-- name: UpdatePermissionGroupIndex :exec
+SELECT
+    SETVAL('permissiongroups_id_seq', (
+            SELECT
+                MAX(id)
+            FROM permissiongroups));
+
 -- name: CreatePermissionGroupPermission :exec
 INSERT INTO permissiongroup_permissions (group_id, permission, enabled)
     VALUES ($1, $2, $3);
@@ -90,7 +104,14 @@ INSERT INTO user_permissiongroup_membership (group_id, user_id)
 
 -- name: AddUserToPermissionGroupForOrganisation :exec
 INSERT INTO organisation_users_permissiongroups (permission_group_id, organisation_users_id)
-    VALUES ($1, (SELECT id FROM organisation_users WHERE user_id = $2 AND organisation_id = $3));
+    VALUES ($1, (
+            SELECT
+                id
+            FROM
+                organisation_users
+            WHERE
+                user_id = $2
+                AND organisation_id = $3));
 
 -- name: DeletePermissionGroup :exec
 DELETE FROM permissiongroups

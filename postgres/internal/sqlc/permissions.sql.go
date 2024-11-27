@@ -21,7 +21,14 @@ func (q *Queries) AddUserToPermissionGroup(ctx context.Context, groupID int32, u
 
 const addUserToPermissionGroupForOrganisation = `-- name: AddUserToPermissionGroupForOrganisation :exec
 INSERT INTO organisation_users_permissiongroups (permission_group_id, organisation_users_id)
-    VALUES ($1, (SELECT id FROM organisation_users WHERE user_id = $2 AND organisation_id = $3))
+    VALUES ($1, (
+            SELECT
+                id
+            FROM
+                organisation_users
+            WHERE
+                user_id = $2
+                AND organisation_id = $3))
 `
 
 type AddUserToPermissionGroupForOrganisationParams struct {
@@ -216,7 +223,14 @@ FROM
     permissiongroups pg
     INNER JOIN organisation_users_permissiongroups org_usr ON org_usr.permission_group_id = pg.id
 WHERE
-    org_usr.organisation_users_id = (SELECT id FROM organisation_users WHERE user_id = $1 AND organisation_id = $2)
+    org_usr.organisation_users_id = (
+        SELECT
+            id
+        FROM
+            organisation_users
+        WHERE
+            user_id = $1
+            AND organisation_id = $2)
 `
 
 func (q *Queries) ListPermissionGroupsForUserForOrganisation(ctx context.Context, userID int32, organisationID int32) ([]Permissiongroup, error) {
@@ -277,6 +291,19 @@ WHERE
 
 func (q *Queries) RenamePermissionGroup(ctx context.Context, iD int32, name *string) error {
 	_, err := q.db.Exec(ctx, renamePermissionGroup, iD, name)
+	return err
+}
+
+const updatePermissionGroupIndex = `-- name: UpdatePermissionGroupIndex :exec
+SELECT
+    SETVAL('permissiongroups_id_seq', (
+            SELECT
+                MAX(id)
+            FROM permissiongroups))
+`
+
+func (q *Queries) UpdatePermissionGroupIndex(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, updatePermissionGroupIndex)
 	return err
 }
 
