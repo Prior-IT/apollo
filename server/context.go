@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gorilla/sessions"
 	"github.com/prior-it/apollo/config"
@@ -37,7 +38,7 @@ func HasFeature(ctx context.Context, feature string) bool {
 		return true
 	}
 	v, ok := ctx.Value(ctxFlags).(map[string]bool)
-	return ok && v[feature]
+	return ok && (v[strings.ToLower(feature)] || v[strings.ToUpper(feature)])
 }
 
 func IsLoggedIn(ctx context.Context) bool {
