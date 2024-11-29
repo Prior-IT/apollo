@@ -14,6 +14,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/getsentry/sentry-go"
+	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
@@ -172,6 +173,12 @@ func (server *Server[state]) MiddlewareHandler(
 }
 
 func (server *Server[state]) AttachDefaultMiddleware() {
+	if server.cfg.Sentry.Enabled {
+		sentryHandler := sentryhttp.New(sentryhttp.Options{
+			Repanic: true,
+		})
+		server.UseStd(sentryHandler.Handle)
+	}
 	server.UseStd(
 		server.RedirectSlashes,
 		middleware.Recoverer,
