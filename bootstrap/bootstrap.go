@@ -162,8 +162,9 @@ func initSentry(logger *slog.Logger, cfg *config.Config) {
 			}
 			return 1.0
 		}),
+		DebugWriter:        os.Stdout,
 		ProfilesSampleRate: cfg.Sentry.ProfilesRate,
-		ServerName:         cfg.App.Name,
+		ServerName:         cfg.App.URL,
 		Release:            cfg.App.Version,
 		Environment:        string(cfg.App.Env),
 	}); err != nil {
