@@ -18,10 +18,10 @@ func (id ID) String() string {
 func ParseID(id string) (ID, error) {
 	integerID, err := strconv.Atoi(id)
 	if err != nil {
-		return 0, fmt.Errorf("cannot parse  id: %w", err)
+		return 0, fmt.Errorf("cannot parse id: %w", err)
 	}
 	if integerID < 0 {
-		return 0, errors.New("cannot parse  id:  ids cannot be negative")
+		return 0, errors.New("cannot parse id: ids cannot be negative")
 	}
 	return ID(int32(integerID)), nil
 }
