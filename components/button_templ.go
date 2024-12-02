@@ -14,6 +14,7 @@ const (
 	ButtonType_Secondary
 	ButtonType_Accent
 	ButtonType_Inverted
+	ButtonType_Danger
 )
 
 var buttonTypeClass = map[ButtonType]string{
@@ -21,6 +22,7 @@ var buttonTypeClass = map[ButtonType]string{
 	ButtonType_Secondary: "border border-primary text-primary enabled:hover:bg-primary-dark enabled:hover:text-white enabled:hover:border-primary-dark shadow-primary-dark/60",
 	ButtonType_Accent:    "bg-accent enabled:hover:bg-accent-dark text-white shadow-accent-dark/60",
 	ButtonType_Inverted:  "bg-white enabled:hover:bg-gray-50 text-body shadow-white/40",
+	ButtonType_Danger:    "border border-danger text-danger enabled:hover:bg-danger enabled:hover:text-white enabled:hover:border-danger shadow-danger/60",
 }
 
 type HtmlType int
@@ -99,7 +101,7 @@ func Button(props ButtonProps) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(htmlTypeToString[props.HtmlType])
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/button.templ`, Line: 54, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/button.templ`, Line: 56, Col: 41}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -130,7 +132,7 @@ func Button(props ButtonProps) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(props.HxGet)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/button.templ`, Line: 69, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/button.templ`, Line: 71, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
