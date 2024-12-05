@@ -55,6 +55,7 @@ const (
 type Config struct {
 	App            AppConfig
 	Sentry         SentryConfig
+	PostHog        PostHogConfig
 	Database       DatabaseConfig
 	Log            LogConfig
 	OAuthProviders map[string]OauthProviderConfig `mapstructure:"OAUTH"`
@@ -88,6 +89,12 @@ type SentryConfig struct {
 	TracesRate   float64
 	ProfilesRate float64
 	ReplayRate   float64
+}
+
+type PostHogConfig struct {
+	Enabled  bool
+	APIKey   string
+	Endpoint string
 }
 
 type DatabaseConfig struct {
