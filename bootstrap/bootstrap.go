@@ -12,6 +12,7 @@ import (
 	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/lmittmann/tint"
+	"github.com/posthog/posthog-go"
 	"github.com/prior-it/apollo/components"
 	"github.com/prior-it/apollo/config"
 	"github.com/prior-it/apollo/postgres"
@@ -20,10 +21,11 @@ import (
 
 // BootstrappedState is a state that is initialised through bootstrapping.
 //
-// The state is responsible for closing the database in its own Close function after it's done using it.
+// The state is responsible for closing the database and the posthog client in its own Close function after it's done using it.
+// The posthog client will be nil if posthog was disabled in config.
 type BootstrappedState[state server.State] interface {
 	server.State
-	Init(server *server.Server[state], cfg *config.Config, db *postgres.DB)
+	Init(server *server.Server[state], cfg *config.Config, db *postgres.DB, posthog posthog.Client)
 }
 
 // Minimal creates a new server and initializes all default systems.
@@ -61,7 +63,7 @@ func Minimal[state server.State](
 // Full creates a new server and initializes all default systems.
 // The Full bootstrapper is perfect for (complex) web applications.
 //
-// This will initialise the server itself as well as most middleware, Sentry (if enabled in config), and a postgres database.
+// This will initialise the server itself as well as most middleware, Sentry and PostHog (if enabled in config), and a postgres database.
 //
 // You can supply additional middleware if you want to.
 //
@@ -86,6 +88,12 @@ func Full[state BootstrappedState[state]](
 		initSentry(logger, cfg)
 	}
 
+	// Initialize PostHog
+	var posthog posthog.Client
+	if cfg.PostHog.Enabled {
+		posthog = initPostHog(logger, cfg)
+	}
+
 	// Connect to the database
 	db, err := postgres.NewDB(context.Background(), cfg.Database.URL, cfg.Database.Schema)
 	if err != nil {
@@ -93,7 +101,7 @@ func Full[state BootstrappedState[state]](
 		os.Exit(1)
 	}
 
-	stt.Init(s, cfg, db)
+	stt.Init(s, cfg, db, posthog)
 
 	s.AttachDefaultMiddleware()
 
@@ -172,4 +180,19 @@ func initSentry(logger *slog.Logger, cfg *config.Config) {
 	} else {
 		logger.Debug("Sentry initialised")
 	}
+}
+
+func initPostHog(logger *slog.Logger, cfg *config.Config) posthog.Client {
+	logger.Debug("Trying to initialise PostHog")
+	client, err := posthog.NewWithConfig(
+		cfg.PostHog.APIKey,
+		posthog.Config{Endpoint: cfg.PostHog.Endpoint},
+	)
+	if err != nil {
+		logger.Error("PostHog initialization failed", "error", err)
+		return nil
+	}
+
+	logger.Debug("PostHog initialised")
+	return client
 }

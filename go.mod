@@ -23,6 +23,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/lmittmann/tint v1.0.5
 	github.com/pingcap/log v1.1.0
+	github.com/posthog/posthog-go v1.2.24
 	github.com/pressly/goose/v3 v3.22.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
