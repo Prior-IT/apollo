@@ -28,9 +28,13 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
 	github.com/vearutop/statigz v1.4.3
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )
 
-require github.com/invopop/yaml v0.2.0 // indirect
+require (
+	github.com/invopop/yaml v0.2.0 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+)
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0

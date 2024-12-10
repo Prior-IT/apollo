@@ -56,6 +56,7 @@ type Config struct {
 	App            AppConfig
 	Sentry         SentryConfig
 	PostHog        PostHogConfig
+	Email          EmailConfig
 	Database       DatabaseConfig
 	Log            LogConfig
 	OAuthProviders map[string]OauthProviderConfig `mapstructure:"OAUTH"`
@@ -97,9 +98,20 @@ type PostHogConfig struct {
 	Endpoint string
 }
 
+type EmailConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	From     string
+	// Email address to send notifications to
+	Notifications string
+}
+
 type DatabaseConfig struct {
-	URL    string
-	Schema string `default:"public"`
+	URL              string
+	Schema           string `default:"public"`
+	MigrateOnStartup bool
 }
 
 type LogConfig struct {
