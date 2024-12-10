@@ -148,7 +148,7 @@ func TestOrganisationService(t *testing.T) {
 		// List without users
 		users, err := service.ListUsersInOrganisation(ctx, organisation.ID)
 		assert.Nil(t, err, "Getting users in organisation should not error")
-		assert.Len(t, users, 0, "Users list shoud be empty")
+		assert.Len(t, users, 0, "Users list should be empty")
 
 		// Add user to organisation
 		email, err := core.NewEmailAddress("getuserok@example.com")
@@ -161,14 +161,14 @@ func TestOrganisationService(t *testing.T) {
 		// List with user in organisation
 		users, err = service.ListUsersInOrganisation(ctx, organisation.ID)
 		assert.Nil(t, err, "Getting users in organisation should not error")
-		assert.NotEmpty(t, users, "Users list shoud not be empty")
+		assert.NotEmpty(t, users, "Users list should not be empty")
 		assert.Equal(t, users[0], *user)
 
 		// Remove user from organisation
 		tests.Check(service.RemoveUser(ctx, user.ID, organisation.ID))
 		users, err = service.ListUsersInOrganisation(ctx, organisation.ID)
 		assert.Nil(t, err, "Getting users in organisation should not error")
-		assert.Len(t, users, 0, "Users list shoud be empty")
+		assert.Len(t, users, 0, "Users list should be empty")
 	})
 
 	t.Run("ok: deleting user removes user from organisation", func(t *testing.T) {
@@ -188,6 +188,6 @@ func TestOrganisationService(t *testing.T) {
 		tests.Check(UserService.DeleteUser(ctx, user.ID))
 		users, err := service.ListUsersInOrganisation(ctx, organisation.ID)
 		assert.Nil(t, err, "Getting users in organisation should not error")
-		assert.Len(t, users, 0, "Users list shoud be empty")
+		assert.Len(t, users, 0, "Users list should be empty")
 	})
 }
