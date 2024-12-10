@@ -3,6 +3,7 @@ package smtp
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"log/slog"
 	"strings"
@@ -79,6 +80,7 @@ func (s *EmailService) SendNotification(
 	ctx context.Context,
 	subject string,
 	message string,
+	args ...any,
 ) error {
 	if s.notifications == nil {
 		return core.ErrEmailAddressEmpty
@@ -88,7 +90,7 @@ func (s *EmailService) SendNotification(
 		*s.notifications,
 		subject,
 		nil,
-		message,
+		fmt.Sprintf(message, args...),
 	)
 }
 

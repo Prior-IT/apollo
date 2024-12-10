@@ -63,6 +63,7 @@ type EmailService interface {
 		ctx context.Context,
 		subject string,
 		message string,
+		args ...any,
 	) error
 
 	// SendRawMessage will send a raw gomail message using the existing configuration.
