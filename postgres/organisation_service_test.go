@@ -190,4 +190,28 @@ func TestOrganisationService(t *testing.T) {
 		assert.Nil(t, err, "Getting users in organisation should not error")
 		assert.Len(t, users, 0, "Users list should be empty")
 	})
+
+	t.Run("ok: add user to organisation and check email", func(t *testing.T) {
+		name := tests.Faker.BS()
+		organisation, err := service.CreateOrganisation(ctx, name, nil)
+		tests.Check(err)
+
+		organisation2, err := service.CreateOrganisation(ctx, tests.Faker.BS(), nil)
+		tests.Check(err)
+
+		// Add user to organisation
+		email, err := core.NewEmailAddress("checkmemberemail@example.com")
+		tests.Check(err)
+		user, err := UserService.CreateUser(ctx, tests.Faker.Name(), email, "nl")
+		tests.Check(err)
+		tests.Check(service.AddUser(ctx, user.ID, organisation.ID))
+
+		// check user in organisation by email
+		user1, err := service.GetMemberByEmail(ctx, organisation.ID, email)
+		assert.Nil(t, err, "error should be nil")
+		assert.Equal(t, user1.Email, email)
+		user2, err := service.GetMemberByEmail(ctx, organisation2.ID, email)
+		assert.ErrorIs(t, err, core.ErrNotFound)
+		assert.Nil(t, user2)
+	})
 }
