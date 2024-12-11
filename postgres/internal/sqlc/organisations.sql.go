@@ -10,8 +10,10 @@ import (
 )
 
 const addUserToOrganisation = `-- name: AddUserToOrganisation :exec
-INSERT INTO organisation_users (user_id, organisation_id)
-    VALUES ($1, $2)
+INSERT INTO
+    organisation_users (user_id, organisation_id)
+VALUES
+    ($1, $2)
 `
 
 func (q *Queries) AddUserToOrganisation(ctx context.Context, userID int32, organisationID int32) error {
@@ -20,8 +22,10 @@ func (q *Queries) AddUserToOrganisation(ctx context.Context, userID int32, organ
 }
 
 const createOrganisation = `-- name: CreateOrganisation :one
-INSERT INTO organisations (name, parent_id)
-    VALUES ($1, $2)
+INSERT INTO
+    organisations (NAME, parent_id)
+VALUES
+    ($1, $2)
 RETURNING
     id, name, parent_id
 `
@@ -35,7 +39,8 @@ func (q *Queries) CreateOrganisation(ctx context.Context, name string, parentID 
 
 const deleteOrganisation = `-- name: DeleteOrganisation :exec
 DELETE FROM organisations
-WHERE id = $1
+WHERE
+    id = $1
 `
 
 func (q *Queries) DeleteOrganisation(ctx context.Context, id int32) error {
@@ -57,6 +62,33 @@ func (q *Queries) GetAmountOfOrganisations(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const getMemberByEmail = `-- name: GetMemberByEmail :one
+SELECT
+    users.id, users.name, users.email, users.joined, users.admin, users.lang
+FROM
+    users
+    INNER JOIN organisation_users ON organisation_users.user_id = users.id
+WHERE
+    organisation_users.organisation_id = $1
+    AND users.email = $2
+LIMIT
+    1
+`
+
+func (q *Queries) GetMemberByEmail(ctx context.Context, organisationID int32, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getMemberByEmail, organisationID, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Joined,
+		&i.Admin,
+		&i.Lang,
+	)
+	return i, err
+}
+
 const getOrganisation = `-- name: GetOrganisation :one
 SELECT
     id, name, parent_id
@@ -64,7 +96,8 @@ FROM
     organisations
 WHERE
     id = $1
-LIMIT 1
+LIMIT
+    1
 `
 
 func (q *Queries) GetOrganisation(ctx context.Context, id int32) (Organisation, error) {
@@ -92,11 +125,11 @@ func (q *Queries) GetParentOrganisation(ctx context.Context, id int32) (*int32, 
 
 const listOrganisationChildren = `-- name: ListOrganisationChildren :many
 SELECT
-	id, name, parent_id
+    id, name, parent_id
 FROM
-	organisations
+    organisations
 WHERE
-	parent_id = $1
+    parent_id = $1
 `
 
 func (q *Queries) ListOrganisationChildren(ctx context.Context, parentID *int32) ([]Organisation, error) {
@@ -215,7 +248,8 @@ func (q *Queries) ListUsersInOrganisation(ctx context.Context, organisationID in
 
 const removeUserFromOrganisation = `-- name: RemoveUserFromOrganisation :exec
 DELETE FROM organisation_users
-WHERE user_id = $1
+WHERE
+    user_id = $1
     AND organisation_id = $2
 `
 
@@ -225,14 +259,13 @@ func (q *Queries) RemoveUserFromOrganisation(ctx context.Context, userID int32, 
 }
 
 const updateOrganisation = `-- name: UpdateOrganisation :one
-UPDATE
-    organisations
+UPDATE organisations
 SET
-    name = $2
+    NAME = $2
 WHERE
     id = $1
 RETURNING
-	id, name, parent_id
+    id, name, parent_id
 `
 
 func (q *Queries) UpdateOrganisation(ctx context.Context, iD int32, name string) (Organisation, error) {
