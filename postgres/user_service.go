@@ -28,9 +28,6 @@ func (u *UserService) CreateUser(
 	email core.EmailAddress,
 	lang string,
 ) (*core.User, error) {
-	if email == nil {
-		return nil, errors.New("email cannot be nil")
-	}
 	user, err := u.q.CreateUser(ctx, sqlc.CreateUserParams{
 		Name:  name,
 		Email: email.String(),
@@ -98,7 +95,7 @@ func (u *UserService) UpdateUser(
 }
 
 func convertUser(user sqlc.User) (*core.User, error) {
-	email, err := core.NewEmailAddress(user.Email)
+	email, err := core.ParseEmailAddress(user.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +103,7 @@ func convertUser(user sqlc.User) (*core.User, error) {
 	return &core.User{
 		ID:     id,
 		Name:   user.Name,
-		Email:  email,
+		Email:  *email,
 		Admin:  user.Admin,
 		Lang:   user.Lang,
 		Joined: user.Joined.Time,
