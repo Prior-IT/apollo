@@ -195,7 +195,7 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 			session.Values[sessionEmail],
 		)
 	}
-	email, err := core.NewEmailAddress(emailStr)
+	email, err := core.ParseEmailAddress(emailStr)
 	if err != nil {
 		return nil, fmt.Errorf("session e-mail address invalid: %w", err)
 	}
@@ -219,7 +219,7 @@ func (apollo *Apollo) retrieveUser() (*core.User, error) {
 	return &core.User{
 		ID:     id,
 		Name:   name,
-		Email:  email,
+		Email:  *email,
 		Admin:  isAdmin,
 		Lang:   lang,
 		Joined: joined,

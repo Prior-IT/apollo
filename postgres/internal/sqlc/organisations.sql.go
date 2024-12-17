@@ -23,7 +23,7 @@ func (q *Queries) AddUserToOrganisation(ctx context.Context, userID int32, organ
 
 const createOrganisation = `-- name: CreateOrganisation :one
 INSERT INTO
-    organisations (NAME, parent_id)
+    organisations (name, parent_id)
 VALUES
     ($1, $2)
 RETURNING
@@ -71,8 +71,6 @@ FROM
 WHERE
     organisation_users.organisation_id = $1
     AND users.email = $2
-LIMIT
-    1
 `
 
 func (q *Queries) GetMemberByEmail(ctx context.Context, organisationID int32, email string) (User, error) {
@@ -261,7 +259,7 @@ func (q *Queries) RemoveUserFromOrganisation(ctx context.Context, userID int32, 
 const updateOrganisation = `-- name: UpdateOrganisation :one
 UPDATE organisations
 SET
-    NAME = $2
+    name = $2
 WHERE
     id = $1
 RETURNING

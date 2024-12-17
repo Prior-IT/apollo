@@ -22,7 +22,7 @@ FROM
 
 -- name: CreateOrganisation :one
 INSERT INTO
-    organisations (NAME, parent_id)
+    organisations (name, parent_id)
 VALUES
     ($1, $2)
 RETURNING
@@ -31,7 +31,7 @@ RETURNING
 -- name: UpdateOrganisation :one
 UPDATE organisations
 SET
-    NAME = $2
+    name = $2
 WHERE
     id = $1
 RETURNING
@@ -96,6 +96,4 @@ FROM
     INNER JOIN organisation_users ON organisation_users.user_id = users.id
 WHERE
     organisation_users.organisation_id = $1
-    AND users.email = $2
-LIMIT
-    1;
+    AND users.email = $2;
