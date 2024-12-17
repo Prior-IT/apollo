@@ -41,7 +41,7 @@ func (s *PgOauthAccountService) CreateUserAccount(
 	// Create a Queries object with the new transaction
 	qtx := s.q.WithTx(tx)
 
-	email, err := core.NewEmailAddress(data.Email)
+	email, err := core.ParseEmailAddress(data.Email)
 	if err != nil {
 		return nil, err
 	}

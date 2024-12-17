@@ -4,9 +4,7 @@ SELECT
 FROM
     organisations
 WHERE
-    id = $1
-LIMIT
-    1;
+    id = $1;
 
 -- name: ListOrganisations :many
 SELECT
@@ -21,17 +19,16 @@ FROM
     organisations;
 
 -- name: CreateOrganisation :one
-INSERT INTO
-    organisations (NAME, parent_id)
-VALUES
-    ($1, $2)
+INSERT INTO organisations(name, parent_id)
+    VALUES ($1, $2)
 RETURNING
     *;
 
 -- name: UpdateOrganisation :one
-UPDATE organisations
+UPDATE
+    organisations
 SET
-    NAME = $2
+    name = $2
 WHERE
     id = $1
 RETURNING
@@ -39,8 +36,7 @@ RETURNING
 
 -- name: DeleteOrganisation :exec
 DELETE FROM organisations
-WHERE
-    id = $1;
+WHERE id = $1;
 
 -- name: ListOrganisationChildren :many
 SELECT
@@ -69,15 +65,12 @@ WHERE
     ou.organisation_id = $1;
 
 -- name: AddUserToOrganisation :exec
-INSERT INTO
-    organisation_users (user_id, organisation_id)
-VALUES
-    ($1, $2);
+INSERT INTO organisation_users(user_id, organisation_id)
+    VALUES ($1, $2);
 
 -- name: RemoveUserFromOrganisation :exec
 DELETE FROM organisation_users
-WHERE
-    user_id = $1
+WHERE user_id = $1
     AND organisation_id = $2;
 
 -- name: GetParentOrganisation :one
@@ -96,6 +89,4 @@ FROM
     INNER JOIN organisation_users ON organisation_users.user_id = users.id
 WHERE
     organisation_users.organisation_id = $1
-    AND users.email = $2
-LIMIT
-    1;
+    AND users.email = $2;
