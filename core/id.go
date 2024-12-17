@@ -14,6 +14,15 @@ func (id ID) String() string {
 	return strconv.FormatInt(int64(id), 10)
 }
 
+func (id *ID) UnmarshalText(text []byte) error {
+	val, err := ParseID(string(text))
+	if err != nil {
+		return err
+	}
+	*id = val
+	return nil
+}
+
 // ParseID parses a string into an ID.
 func ParseID(id string) (ID, error) {
 	integerID, err := strconv.Atoi(id)
