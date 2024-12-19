@@ -159,6 +159,18 @@ func (o *OrganisationService) AddUserTx(
 	return queries.AddUserToOrganisation(ctx, int32(UserID), int32(OrgID))
 }
 
+func (o *OrganisationService) GetMemberByEmail(
+	ctx context.Context,
+	orgID core.OrganisationID,
+	email core.EmailAddress,
+) (*core.User, error) {
+	user, err := o.q.GetMemberByEmail(ctx, int32(orgID), email.String())
+	if err != nil {
+		return nil, ConvertPgError(err)
+	}
+	return convertUser(user)
+}
+
 // RemoveUser implements core.OrganisationService.RemoveUser
 func (o *OrganisationService) RemoveUser(
 	ctx context.Context,
