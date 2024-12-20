@@ -33,14 +33,14 @@ func NewEmailService(cfg config.EmailConfig) (*EmailService, error) {
 		d:    d,
 	}
 
-	address, err := core.NewEmailAddress(cfg.Notifications)
+	address, err := core.ParseEmailAddress(cfg.Notifications)
 	switch {
 	case errors.Is(err, core.ErrEmailAddressEmpty):
 		slog.Info("Notification e-mail address empty, notifications will not be sent")
 	case err != nil:
 		return nil, err
 	default:
-		s.notifications = &address
+		s.notifications = address
 	}
 
 	return &s, nil

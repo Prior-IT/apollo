@@ -16,22 +16,26 @@ var (
 	ErrEmailAddressEmpty   = errors.New("e-mail address is empty")
 )
 
-type EmailAddress interface {
-	// String returns the string representation for this e-mail address
-	String() string
-}
-
-type emailAddress struct {
+type EmailAddress struct {
 	address string
 }
 
-func (email emailAddress) String() string {
+func (email *EmailAddress) String() string {
 	return email.address
 }
 
-// NewEmailAddress parses an e-mail address from any string.
+func (email *EmailAddress) UnmarshalText(text []byte) error {
+	add, err := ParseEmailAddress(string(text))
+	if err != nil {
+		return err
+	}
+	email.address = add.address
+	return nil
+}
+
+// ParseEmailAddress parses an e-mail address from any string.
 // This uses RFC-5322 to determine valid e-mail addresses, e.g. "Biggie Smalls <notorious@example.com>"
-func NewEmailAddress(address string) (EmailAddress, error) {
+func ParseEmailAddress(address string) (*EmailAddress, error) {
 	if len(address) == 0 {
 		return nil, errors.Join(ErrInvalidEmailAddress, ErrEmailAddressEmpty)
 	}
@@ -43,7 +47,7 @@ func NewEmailAddress(address string) (EmailAddress, error) {
 			fmt.Errorf("cannot parse e-mail address %q: %w", address, err),
 		)
 	}
-	return emailAddress{address}, nil
+	return &EmailAddress{address}, nil
 }
 
 type EmailService interface {

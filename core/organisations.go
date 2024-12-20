@@ -51,6 +51,8 @@ type OrganisationService interface {
 	ListOrganisationsForUser(ctx context.Context, id UserID) ([]Organisation, error)
 	// List the users that belong to an organisation or ErrOrganisationDoesNotExist if no such organisation exists
 	ListUsersInOrganisation(ctx context.Context, id OrganisationID) ([]User, error)
+	// Return a User for the given organisation and email or ErrNotFound if no such member exisits
+	GetMemberByEmail(ctx context.Context, OrgID OrganisationID, email EmailAddress) (*User, error)
 	// Add user to an existing organisation
 	AddUser(ctx context.Context, UserID UserID, OrgID OrganisationID) error
 	// Remove user from an organisation
