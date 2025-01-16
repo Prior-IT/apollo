@@ -59,7 +59,9 @@ func DetectLanguage[state any](apollo *Apollo, _ state) (context.Context, error)
 		)
 	}
 
-	apollo.LogField("lang", slog.StringValue(string(ctxi18n.Locale(ctx).Code())))
+	if ctxi18n.Locale(ctx) != nil {
+		apollo.LogField("lang", slog.StringValue(string(ctxi18n.Locale(ctx).Code())))
+	}
 
 	return ctx, err
 }
