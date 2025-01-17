@@ -196,8 +196,12 @@ func (server *Server[state]) AttachDefaultMiddleware() {
 		server.ContextMiddleware,
 		server.FeatureFlagMiddleware,
 		server.MiddlewareHandler(InjectApollo),
-		server.MiddlewareHandler(DetectLanguage),
 	)
+	if !server.cfg.App.DisableI18n {
+		server.UseStd(
+			server.MiddlewareHandler(DetectLanguage),
+		)
+	}
 }
 
 // Start a new goroutine that runs the server.

@@ -80,6 +80,7 @@ type AppConfig struct {
 	AuthenticationKey      string `                     mapstructure:"AUTHKEY"`
 	EncryptionKey          string `                     mapstructure:"ENCKEY"`
 	DefaultPermissionGroup int    `                     mapstructure:"DEFAULTPERMGROUP"`
+	DisableI18n            bool
 	FallbackLang           string `default:"nl"`
 }
 
