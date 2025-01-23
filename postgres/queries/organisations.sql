@@ -81,6 +81,16 @@ FROM
 WHERE
     id = $1;
 
+-- name: GetMember :one
+SELECT
+    users.*
+FROM
+    users
+    INNER JOIN organisation_users ON organisation_users.user_id = users.id
+WHERE
+    organisation_users.organisation_id = $1
+    AND users.id = $2;
+
 -- name: GetMemberByEmail :one
 SELECT
     users.*

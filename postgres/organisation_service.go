@@ -171,6 +171,18 @@ func (o *OrganisationService) GetMemberByEmail(
 	return convertUser(user)
 }
 
+func (o *OrganisationService) GetMember(
+	ctx context.Context,
+	orgID core.OrganisationID,
+	userID core.UserID,
+) (*core.User, error) {
+	user, err := o.q.GetMember(ctx, int32(orgID), int32(userID))
+	if err != nil {
+		return nil, ConvertPgError(err)
+	}
+	return convertUser(user)
+}
+
 // RemoveUser implements core.OrganisationService.RemoveUser
 func (o *OrganisationService) RemoveUser(
 	ctx context.Context,
