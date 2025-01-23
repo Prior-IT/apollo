@@ -88,8 +88,8 @@ FROM
     users
     INNER JOIN organisation_users ON organisation_users.user_id = users.id
 WHERE
-    organisation_users.organisation_id = $1
-    AND users.id = $2;
+    organisation_users.organisation_id = $2
+    AND users.id = $1;
 
 -- name: GetMemberByEmail :one
 SELECT
