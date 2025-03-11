@@ -65,23 +65,24 @@ type Config struct {
 }
 
 type AppConfig struct {
-	Debug                  bool
-	SSL                    bool   `default:"true"`
-	Port                   uint32 `default:"3000"`
-	ProxyPort              uint32
-	BasePath               string `default:""`
-	Host                   string
-	URL                    string
-	Name                   string
-	ShutdownTimeout        int32  `default:"2"` // in seconds
-	Env                    AppEnv `default:"production"`
-	Version                string
-	RequestTimeout         uint32 `default:"30"` // in seconds
-	AuthenticationKey      string `                     mapstructure:"AUTHKEY"`
-	EncryptionKey          string `                     mapstructure:"ENCKEY"`
-	DefaultPermissionGroup int    `                     mapstructure:"DEFAULTPERMGROUP"`
-	DisableI18n            bool
-	FallbackLang           string `default:"nl"`
+	Debug                   bool
+	SSL                     bool   `default:"true"`
+	Port                    uint32 `default:"3000"`
+	ProxyPort               uint32
+	BasePath                string `default:""`
+	Host                    string
+	URL                     string
+	Name                    string
+	ShutdownTimeout         int32  `default:"2"` // in seconds
+	Env                     AppEnv `default:"production"`
+	Version                 string
+	RequestTimeout          uint32 `default:"30"` // in seconds
+	AuthenticationKey       string `                     mapstructure:"AUTHKEY"`
+	EncryptionKey           string `                     mapstructure:"ENCKEY"`
+	DefaultPermissionsGroup int    `                     mapstructure:"DEFAULTPERMGROUP"`
+	FullPermissionsGroup    int    `                     mapstructure:"FULLPERMGROUP"`
+	DisableI18n             bool
+	FallbackLang            string `default:"nl"`
 }
 
 type SentryConfig struct {
