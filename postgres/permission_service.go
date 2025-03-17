@@ -286,8 +286,11 @@ func (p *PermissionService) UpdatePermissionGroup(
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck // See tx.Rollback() documentation
 	q := sqlc.New(tx)
+	if err := q.ClearPermissionGroupPermissions(ctx, int32(Group.ID)); err != nil {
+		return fmt.Errorf("Could not clear existing permissions in permission group (id %v)", Group.ID)
+	}
 	for permission, enabled := range Group.Permissions {
-		err := q.UpdatePermissionGroupPermission(ctx, sqlc.UpdatePermissionGroupPermissionParams{
+		err := q.CreatePermissionGroupPermission(ctx, sqlc.CreatePermissionGroupPermissionParams{
 			GroupID:    int32(Group.ID),
 			Permission: permission.String(),
 			Enabled:    enabled,

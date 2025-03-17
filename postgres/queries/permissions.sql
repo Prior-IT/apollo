@@ -1,5 +1,5 @@
 -- name: CreatePermission :exec
-INSERT INTO permissions (name)
+INSERT INTO permissions(name)
     VALUES ($1)
 ON CONFLICT (name)
     DO NOTHING;
@@ -32,7 +32,7 @@ FROM
     permissiongroups pg
     INNER JOIN organisation_users_permissiongroups org_usr ON org_usr.permission_group_id = pg.id
 WHERE
-    org_usr.organisation_users_id = (
+    org_usr.organisation_users_id =(
         SELECT
             id
         FROM
@@ -59,27 +59,31 @@ WHERE
     pg.id = $1;
 
 -- name: CreatePermissionGroup :one
-INSERT INTO permissiongroups (name)
+INSERT INTO permissiongroups(name)
     VALUES ($1)
 RETURNING
     *;
 
 -- name: CreatePermissionGroupWithID :one
-INSERT INTO permissiongroups (id, name)
+INSERT INTO permissiongroups(id, name)
     VALUES ($1, $2)
 RETURNING
     *;
 
 -- name: UpdatePermissionGroupIndex :exec
 SELECT
-    SETVAL('permissiongroups_id_seq', (
+    SETVAL('permissiongroups_id_seq',(
             SELECT
                 MAX(id)
             FROM permissiongroups));
 
 -- name: CreatePermissionGroupPermission :exec
-INSERT INTO permissiongroup_permissions (group_id, permission, enabled)
+INSERT INTO permissiongroup_permissions(group_id, permission, enabled)
     VALUES ($1, $2, $3);
+
+-- name: ClearPermissionGroupPermissions :exec
+DELETE FROM permissiongroup_permissions
+WHERE group_id = $1;
 
 -- name: RenamePermissionGroup :exec
 UPDATE
@@ -99,12 +103,12 @@ WHERE
     AND permission = $2;
 
 -- name: AddUserToPermissionGroup :exec
-INSERT INTO user_permissiongroup_membership (group_id, user_id)
+INSERT INTO user_permissiongroup_membership(group_id, user_id)
     VALUES ($1, $2);
 
 -- name: AddUserToPermissionGroupForOrganisation :exec
-INSERT INTO organisation_users_permissiongroups (permission_group_id, organisation_users_id)
-    VALUES ($1, (
+INSERT INTO organisation_users_permissiongroups(permission_group_id, organisation_users_id)
+    VALUES ($1,(
             SELECT
                 id
             FROM
