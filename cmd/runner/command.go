@@ -238,7 +238,7 @@ func (c *command) Restart(
 		c.Style,
 		c.RequiresSigKill,
 		c.RunAtStart,
-		c.FullCommand, //nolint:govet // we can be 100% sure this string has already been formatted correctly
+		c.FullCommand,
 	)
 	if err != nil {
 		return fmt.Errorf("cannot restart command %q: %w", c.Name, err)
