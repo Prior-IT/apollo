@@ -16,7 +16,6 @@ import (
 
 type EmailService struct {
 	from          string
-	replyTo       *core.EmailAddress
 	d             *gomail.Dialer
 	notifications *core.EmailAddress
 }
@@ -44,18 +43,6 @@ func NewEmailService(cfg config.EmailConfig) (*EmailService, error) {
 		s.notifications = address
 	}
 
-	if cfg.ReplyTo != nil {
-		rAddress, err := core.ParseEmailAddress(*cfg.ReplyTo)
-		switch {
-		case errors.Is(err, core.ErrEmailAddressEmpty):
-			slog.Info("ReplyTo e-mail address empty, notifications will not be sent")
-		case err != nil:
-			return nil, err
-		default:
-			s.replyTo = rAddress
-		}
-	}
-
 	return &s, nil
 }
 
@@ -68,14 +55,31 @@ func (s *EmailService) SendEmail(
 	template *templ.Component,
 	plaintextMessage string,
 ) error {
+	return s.SendEmailWithExtraHeaders(ctx, address, subject, template, plaintextMessage, []struct {
+		key   string
+		value string
+	}{})
+}
+
+func (s *EmailService) SendEmailWithExtraHeaders(
+	ctx context.Context,
+	address core.EmailAddress,
+	subject string,
+	template *templ.Component,
+	plaintextMessage string,
+	extraHeaders []struct {
+		key   string
+		value string
+	},
+) error {
 	m := gomail.NewMessage()
 
 	m.SetHeader("From", s.from)
 	m.SetHeader("To", address.String())
 	m.SetHeader("Subject", subject)
 
-	if s.replyTo != nil {
-		m.SetHeader("Reply-To", s.replyTo.String())
+	for _, header := range extraHeaders {
+		m.SetHeader(header.key, header.value)
 	}
 
 	m.SetBody("text/plain", plaintextMessage)
