@@ -107,6 +107,8 @@ type EmailConfig struct {
 	From     string
 	// Email address to send notifications to
 	Notifications string
+	// Optional email to send replies to
+	ReplyTo *string
 }
 
 type DatabaseConfig struct {

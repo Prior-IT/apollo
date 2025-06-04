@@ -16,6 +16,7 @@ import (
 
 type EmailService struct {
 	from          string
+	replyTo       *core.EmailAddress
 	d             *gomail.Dialer
 	notifications *core.EmailAddress
 }
@@ -43,6 +44,18 @@ func NewEmailService(cfg config.EmailConfig) (*EmailService, error) {
 		s.notifications = address
 	}
 
+	if cfg.ReplyTo != nil {
+		rAddress, err := core.ParseEmailAddress(*cfg.ReplyTo)
+		switch {
+		case errors.Is(err, core.ErrEmailAddressEmpty):
+			slog.Info("ReplyTo e-mail address empty, notifications will not be sent")
+		case err != nil:
+			return nil, err
+		default:
+			s.replyTo = rAddress
+		}
+	}
+
 	return &s, nil
 }
 
@@ -60,6 +73,11 @@ func (s *EmailService) SendEmail(
 	m.SetHeader("From", s.from)
 	m.SetHeader("To", address.String())
 	m.SetHeader("Subject", subject)
+
+	if s.replyTo != nil {
+		m.SetHeader("Reply-To", s.replyTo.String())
+	}
+
 	m.SetBody("text/plain", plaintextMessage)
 
 	if template != nil {
