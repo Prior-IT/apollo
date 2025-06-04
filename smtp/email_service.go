@@ -21,8 +21,8 @@ type EmailService struct {
 }
 
 type EmailHeader struct {
-	key   string
-	value string
+	Key   string
+	Value string
 }
 
 func NewEmailService(cfg config.EmailConfig) (*EmailService, error) {
@@ -78,7 +78,7 @@ func (s *EmailService) SendEmailWithExtraHeaders(
 	m.SetHeader("Subject", subject)
 
 	for _, header := range extraHeaders {
-		m.SetHeader(header.key, header.value)
+		m.SetHeader(header.Key, header.Value)
 	}
 
 	m.SetBody("text/plain", plaintextMessage)
