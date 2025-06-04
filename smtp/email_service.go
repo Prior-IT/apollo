@@ -20,6 +20,11 @@ type EmailService struct {
 	notifications *core.EmailAddress
 }
 
+type EmailHeader struct {
+	key   string
+	value string
+}
+
 func NewEmailService(cfg config.EmailConfig) (*EmailService, error) {
 	d := gomail.NewDialer(
 		cfg.Host,
@@ -55,10 +60,7 @@ func (s *EmailService) SendEmail(
 	template *templ.Component,
 	plaintextMessage string,
 ) error {
-	return s.SendEmailWithExtraHeaders(ctx, address, subject, template, plaintextMessage, []struct {
-		key   string
-		value string
-	}{})
+	return s.SendEmailWithExtraHeaders(ctx, address, subject, template, plaintextMessage, []EmailHeader{})
 }
 
 func (s *EmailService) SendEmailWithExtraHeaders(
@@ -67,10 +69,7 @@ func (s *EmailService) SendEmailWithExtraHeaders(
 	subject string,
 	template *templ.Component,
 	plaintextMessage string,
-	extraHeaders []struct {
-		key   string
-		value string
-	},
+	extraHeaders []EmailHeader,
 ) error {
 	m := gomail.NewMessage()
 
